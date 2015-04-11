@@ -1,0 +1,30 @@
+<div id="command_box">
+<%= link_to 'New Thread', :action => 'new' %>
+<%= link_to 'Export Threads', :action => 'export' %>
+</div>
+<h1>Listing Threads</h1>
+
+<table>
+  <tr>
+	<th>List-ID</th>
+    <th>Name</th>
+  </tr>
+
+<% for email_thread in @email_threads %>
+  <tr>
+	<td><%= email_thread.listno %></td>
+  	<td><%= email_thread.Name %></td>
+    <td><%= link_to 'Show', :controller => 'summary', :action => 'show', :email_thread => email_thread, :control => 'show'%></td>
+    <td><%= link_to 'Edit', :action => 'edit', :id => email_thread %></td>
+    <td><%= link_to 'Destroy', { :action => 'destroy', :id => email_thread }, :confirm => 'Are you sure?', :method => :post %></td>
+	<td><%= link_to 'Destroy All', { :action => 'destroyAll', :id => email_thread }, :confirm => 'This will destroy the thread and its emails. Ok?', :method => :post %></td>
+  </tr>
+  <% for email in email_thread.emails %>
+	<tr><td>&nbsp;</td><td class="email">
+		<%=h email.From %>
+	</td></tr>
+  <% end %>
+<% end %>
+</table>
+<br />
+

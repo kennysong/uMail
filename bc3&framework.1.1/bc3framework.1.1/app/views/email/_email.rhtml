@@ -1,0 +1,18 @@
+<%= error_messages_for 'email' %>
+<a href="#" onclick="Element.toggle('e<%=email_counter%>');return false" style="text-decoration: none; "><b>Email <%=email_counter+1%> &#10140;</b></a><br>
+<div id="e<%=email_counter%>" class="emails" style="display: none;">
+<% fields_for "e[]", email do |e| %>
+<table>
+<tr><td>Submitted By:    </td> <td><%= e.text_field :Submit_By, :value => email.Submit_By, :cols => 120 %>   </td></tr>
+<tr><td>From:    </td> <td><%= e.text_field 'From', :value => email.From, :cols => 120 %>   </td></tr>
+<tr><td>To:      </td> <td><%= e.text_field 'To', :value => email.To, :cols => 120 %>     </td></tr>
+<tr><td>CC:      </td> <td><%= e.text_field 'Cc', :value => email.Cc, :cols => 120 %>     </td></tr>
+<tr><td>Date:    </td> <td><%= e.text_field 'Date', :value => email.Date, :cols => 120 %>   </td></tr>
+<tr><td>Subject: </td> <td><%= e.text_field 'Subject', :value => email.Subject, :cols => 120 %></td></tr>
+<tr><td>Hidden: </td> <td><%= e.check_box 'Hidden' %></td></tr>
+<tr><td>Body:    </td> <td><%= e.text_area 'Body', :value => email.Body, :cols => 120 %>    </td></tr>
+<tr><td>Raw Source:    </td> <td><%= e.text_area 'Original', :value => email.Original, :cols => 120, :rows => 10%>    </td></tr>
+</table>
+<%=e.hidden_field 'Submit_Date', :value => Time.now%>
+<% end %>
+</div>

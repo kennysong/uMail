@@ -1,0 +1,4 @@
+<% form_tag ({:action => 'create'}) do %>
+	<h1>Verify Parsing <%= submit_tag "Create" %> <span style="font-size: x-small;"><%= link_to 'Cancel', :action => 'list'%></span></h1>
+  <%= render :partial => 'form'%>
+<% end %>

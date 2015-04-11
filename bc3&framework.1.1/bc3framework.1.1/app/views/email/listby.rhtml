@@ -1,0 +1,32 @@
+<h1>Listing emails of <%=@by%></h1>
+
+<table>
+  <tr>
+	<th>Subject</th>
+	<th>Date</th>
+    <th>To</th>
+	<th>From</th>
+	<th>Cc</th>
+	<th>Hidden</th>
+  </tr>
+  
+<% for email in @emails 
+	if (email.Submit_By == @by) %>
+  <tr>	
+	<td><%=h email.Subject%></td>
+	<td><%=h email.Date.to_s(:short) if email.Date%></td>
+    <td><%=h email.To%></td>
+	<td><%=h email.From%></td>
+	<td><%=h email.Cc%></td>
+	<td><%=h email.Hidden%></td>
+    <td><%= link_to 'Edit', :action => 'edit', :id => email %></td>
+    <td><%= link_to 'Destroy', { :action => 'destroy', :id => email }, :confirm => 'Are you sure?', :method => :post %></td>
+  </tr>
+<%  end
+	end %>
+</table>
+
+<br />
+
+<%= link_to 'New email', :action => 'new' %>
+<%= link_to 'Parse new email', :action => 'newparse' %>

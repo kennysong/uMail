@@ -1,0 +1,7 @@
+<h1>Editing Thread</h1>
+
+<% form_tag ({:action => 'update', :id => @email_thread}) do %>
+  <%= render :partial => 'form' %>
+  <%= submit_tag 'Save' %>
+  <%= link_to 'Back', :action => 'list' %>
+<% end %>

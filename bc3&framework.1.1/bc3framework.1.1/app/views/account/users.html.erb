@@ -1,0 +1,11 @@
+<table>
+  <tr>
+    <th>Listing Users</th>
+  </tr>
+  
+<% for user in @users %>
+  <tr>
+    <td><%=h user.login %></td>
+ </tr>
+<% end %>
+</table>

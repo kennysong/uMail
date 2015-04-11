@@ -1,0 +1,10 @@
+<%= error_messages_for 'summary' %>
+
+<!--[form:summary]-->
+<p><label for="summary_Sum">Summary</label><br/>
+<%= text_area 'summary', 'Sum', :rows => 13, :cols => 100, :onkeyup => 'wordCount();', :onchange => 'wordCount();'%>
+</p>
+
+<%= hidden_field 'summary', 'Sent'  %>
+<!--[eoform:summary]-->
+

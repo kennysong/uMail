@@ -1,0 +1,3 @@
+<%= javascript_include_tag :defaults%>
+<h1 id="title">Subject: <%=@email_thread.Name%></h1>
+<%= render :partial => 'email', :collection => @emails%>

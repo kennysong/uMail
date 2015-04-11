@@ -1,0 +1,167 @@
+body { background-color: #fff; color: #333; }
+
+body, p, ol, ul, td {
+  font-family: verdana, arial, helvetica, sans-serif;
+  font-size:   13px;
+  line-height: 18px;
+}
+
+pre {
+  background-color: #eee;
+  padding: 10px;
+  font-size: 11px;
+}
+
+a { color: #000; }
+a:visited { color: #666; }
+a:hover { color: #fff; background-color:#000; }
+
+.fieldWithErrors {
+  padding: 2px;
+  background-color: red;
+  display: table;
+}
+
+#errorExplanation {
+  width: 400px;
+  border: 2px solid red;
+  padding: 7px;
+  padding-bottom: 12px;
+  margin-bottom: 20px;
+  background-color: #f0f0f0;
+}
+
+#errorExplanation h2 {
+  text-align: left;
+  font-weight: bold;
+  padding: 5px 5px 5px 15px;
+  font-size: 12px;
+  margin: -7px;
+  background-color: #c00;
+  color: #fff;
+}
+
+#errorExplanation p {
+  color: #333;
+  margin-bottom: 0;
+  padding: 5px;
+}
+
+#errorExplanation ul li {
+  font-size: 12px;
+  list-style: square;
+}
+
+#command_box {
+	background-color: #e4e4e4;
+    position: static;	
+	padding: 2 2 2 2;
+	width: 465px;
+	text-align: center;
+	border: 1px solid black;
+}
+
+div.uploadStatus {
+  margin: 5px;
+}
+
+div.progressBar {
+  margin: 5px;
+}
+
+div.progressBar div.border {
+  background-color: #fff;
+  border: 1px solid grey;
+  width: 100%;
+}
+
+div.progressBar div.background {
+  background-color: #333;
+  height: 18px;
+  width: 0%;
+}
+
+iframe {
+	border: none;
+}
+
+.menu{
+	padding: 5 5 5 5;
+	text-decoration: none;
+	font-size: large;
+	font-family: cursive;
+	background-color: #ccc;
+	color: #000;
+}
+a.menu{
+	font-weight: bold;
+}
+a.menu:visited{
+	color: #000;
+}
+a.menu:visited:hover{
+	color: #fff;
+}
+
+#login{
+	border-color: #003399;
+	border-style: solid;
+}
+
+tr.item_row{
+	background-color: #ddd;
+}
+td.email{
+	padding: 0 0 0 15;
+}
+td.checkbox{
+	width: 190;
+}
+div.sentences{
+	background-color: #ddd;
+	margin: 0 1 1 1;
+}
+div.clear_sentences{
+	margin: 0 1 1 215;
+}
+.instructions{
+	background-color: #ff9;
+	border: thin solid #999;
+	padding: 0 5 0 5;
+}
+
+.meta{
+	width: 37px;
+	position: absolute;
+	left:153px;
+	height:17px;
+}
+.prop{
+	width: 36px;
+	position: absolute;
+	left: 52px;
+	height:17px;
+}
+.req{
+	width: 31px;
+	position: absolute;
+	left: 89px;
+	height:17px;
+}
+.cmt{
+	width: 31px;
+	position: absolute;
+	left: 121px;
+	height:17px;
+}
+.meet{
+	width: 37px;
+	position: absolute;
+	height:17px;
+}
+.subj{
+	width: 37px;
+	position: absolute;
+	height: 17px;
+	left: 191px;
+}
