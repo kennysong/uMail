@@ -33,7 +33,7 @@ for i in range(len(root)):
 
 #BeginPiece: Turn email into vectors
 
-def SentenceFeature(root,i,j,k,l):
+def SentenceFeature(root,thread,DOC,Text,Sent):
         #input a <Sent> </Sent>, meaning a sentence, generate the feature vector for the sentence
         #Input must be in the form of root[i][j][k][l] with l being the position of the email in the thread
         feature = []
@@ -49,17 +49,17 @@ def SentenceFeature(root,i,j,k,l):
                 #Is Question
 
         #thread line number
-        feature.append[l+1]
+        feature.append[Sent+1]
 
         #Relave Pos. in thread
-        feature.append[(l+1)/len(k)*100]
+        feature.append[(Sent+1)/len(Text)*100]
 
         #Centroid similarity
 
         #Local centroid similarity
 
         #Length
-        sentence = root[i][j][k][l].text
+        sentence = root[thread][DOC][Text][Sent].text
         sentence_length = len(sentence.split())
         feature.append(sentence_length)
 
@@ -83,15 +83,15 @@ def SentenceFeature(root,i,j,k,l):
                 #Num_recipients
                 #IsHiden is not included as a feature (end of page 34) 
 
-        #Email number
-        feature.append(j)
+        #Email number 
+        feature.append(DOC)
 
         #Relative Pos. in email
-        feature.append((j+1)/(len(root[i])-2)*100)
+        feature.append((DOC+1)/(len(root[thread])-2)*100)
 
         #Subject Similarity
         all_sentence = [] #include all sentence in the email
-        for t in range(len(root[i][j][k])):
+        for t in range(len(root[thread][DOC][Text])):
                 all_sentence.append(root[i][j][k][t].text)
 
         all_sentence = [all_sentence[t].split() for t in range(len(all_sentence))]
@@ -99,7 +99,7 @@ def SentenceFeature(root,i,j,k,l):
         print all_sentence
         all_sentence = [all_sentence[m].lower() for m in range(len(all_sentence))]
 
-        subject_line = root[i][j][3].text
+        subject_line = root[thread][DOC][3].text
         subject_line = subject_line.lower()
         subject_line = subject_line.split()
 
@@ -121,8 +121,8 @@ def SentenceFeature(root,i,j,k,l):
                 
         feature.append(count)
 
-        #Num_recipients
-        recipients = root[i][j][1].text + root[i][j][2].text
+        #Num_recipients thread,DOC,Text,Sent  i,j,k,l
+        recipients = root[thread][DOC][1].text + root[thread][DOC][2].text
 
         count = 0
 
