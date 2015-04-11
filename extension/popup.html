@@ -1,37 +1,40 @@
 <!doctype html>
-<!--
- This page is shown when the extension button is clicked, because the
- "browser_action" field in manifest.json contains the "default_popup" key with
- value "popup.html".
- -->
 <html>
   <head>
-    <title>Getting Started Extension's Popup</title>
+    <title>uMail</title>
+    <link type="text/css" rel="stylesheet" href="css/materialize.min.css"  media="screen,projection"/>
+    <script type="text/javascript" src="js/materialize/jquery-2.1.3.min.js"></script>
+    <script type="text/javascript" src="js/materialize/materialize.min.js"></script>
+    <script type="text/javascript" src="js/umail/popup.js"></script>
     <style>
       body {
-        font-family: "Segoe UI", "Lucida Grande", Tahoma, sans-serif;
-        font-size: 100%;
+        width: 300px;
+        height: 310px;
+        background-color: rgb(250, 250, 250);
+        text-align: center;
       }
-      #status {
-        /* avoid an excessively wide status text */
-        white-space: pre;
-        text-overflow: ellipsis;
-        overflow: hidden;
-        max-width: 400px;
+      h1 {
+        font-size: 22px;
+        line-height: 28px;
+        margin: 0 0 20px;
+      }
+      a {
+        font-size: 18px;
+      }
+      #settings {
+        margin-top: 10px;
       }
     </style>
-
-    <!--
-      - JavaScript and HTML must be in separate files: see our Content Security
-      - Policy documentation[1] for details and explanation.
-      -
-      - [1]: https://developer.chrome.com/extensions/contentSecurityPolicy
-     -->
-    <script src="popup.js"></script>
   </head>
   <body>
-    <div id="status"></div>
-    <img id="image-result" hidden>
+      <img src="img/icon128.png">
+      <h1>Summarize your email.</h1>
+      <div>
+        <a class="waves-effect waves-light btn-large blue darken-1" href="http://gmail.com">Go to Gmail<i class="mdi-content-send right"></i></a>
+      </div>
+      <div id="settings">
+        <a class="waves-effect waves-light btn-large red darken-1">Settings</a>
+      </div>
   </body>
 </html>
 

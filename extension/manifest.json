@@ -1,20 +1,30 @@
 {
-  "manifest_version": 2,
   "name": "uMail",
   "version": "0.1",
-
   "description": "Automatic email summarization for Gmail.",
-
-  "icons": {"16": "icon16.png",
-            "48": "icon48.png",
-            "128": "icon128.png"},
 
   "browser_action": {
     "default_popup": "popup.html",
     "default_title": "uMail"
   },
-  "permissions": [
-    "activeTab",
-    "https://ajax.googleapis.com/"
-  ]
+  "icons": {
+    "16": "img/icon16.png",
+    "48": "img/icon48.png",
+    "128": "img/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://mail.google.com/*"],
+      "js": ["js/umail/content.js"]
+    }
+  ],
+
+  // So we can inject these as <script>s that have full access to the DOM
+  "web_accessible_resources": [
+    "js/gmail-js/*",
+    "js/umail/umail.js",
+    "img/*"
+  ],
+
+  "manifest_version": 2
 }
