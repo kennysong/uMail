@@ -1,7 +1,0 @@
-<% form_tag ({ :action => 'create_many', :doc_id => @docid}) do %>
-	<h1>Verify Parsing <%= submit_tag "Create" %> <span style="font-size: x-small;"><%= link_to 'Cancel', :action => 'list'%></span></h1>
-	<% if @docid %>
-		List-ID: <%= @docid %><br>
-	<% end %>
-	<%= render :partial => 'email', :collection => @emails %>
-<% end %>

@@ -1,6 +1,0 @@
-<h1>Please Enter Your Information</h1>
-
-<% form_tag({:action => 'create', :id => session[:user]}) do%>
-  <%= render :partial => 'user' %>
-  <%= submit_tag "Next" %>
-<% end %>

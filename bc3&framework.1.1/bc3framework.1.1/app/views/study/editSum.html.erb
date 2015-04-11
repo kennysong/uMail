@@ -1,7 +1,0 @@
-<h1>Editing Summary</h1>
-
-<% form_tag ({:action => 'updateSum', :id => @summary}) do %>
-  <%= render :partial => 'simpleSum' %>
-  <%= submit_tag 'Save' %> <%= link_to 'Cancel', :action => 'list' %>
-
-<% end %>
