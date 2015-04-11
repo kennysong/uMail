@@ -84,7 +84,7 @@ def SentenceFeature(root,thread,DOC,Text,Sent):
                 #IsHiden is not included as a feature (end of page 34) 
 
         #Email number 
-        feature.append(DOC)
+        feature.append(DOC+1)
 
         #Relative Pos. in email
         feature.append((DOC+1)/(len(root[thread])-2)*100)
