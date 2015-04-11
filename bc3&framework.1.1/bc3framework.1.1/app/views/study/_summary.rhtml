@@ -1,0 +1,23 @@
+<tr class="summary">
+	<%= #Assign ordering if needed
+	 	summary.update_attribute('list_order',summary_counter) if summary.list_order != summary_counter%>
+	<td/>
+	<td/>
+	<td/>
+	<td>
+	<!-- Link_to_remote would work here-->
+	<%= link_to "&#8593;", {:action => 'move', :direction => 'up', :id => summary}, :style => "text-decoration:none", :method => :post %>
+	<%= link_to "&#8595;", {:action => 'move', :direction => 'down', :id => summary}, :style => "text-decoration:none", :method => :post %>
+	<%= if summary.email_thread 
+				if summary.email_thread.listno
+					summary.email_thread.listno
+				else
+					summary.email_thread.Name
+				end
+			end
+		 %></td>
+	<td/>
+	<td><%= link_to 'Show', :action => 'showSum', :id => summary if summary.Sent || summary.Sum%></td>
+	<td><%= link_to 'Edit', :action => 'editSum', :id => summary %></td>
+    <td><%= link_to 'Delete', { :action => 'destroySum', :id => summary }, :confirm => 'Are you sure you want to destroy this summary?', :method => :post %></td>
+</tr>

@@ -1,0 +1,27 @@
+xml.instruct! :xml, :version=>"1.0" 
+xml.root{
+for thread in @threads
+  xml.thread do
+    xml.name(thread.Name)
+    xml.listno(thread.listno)
+    email_count = 0
+    for email in thread.myemails
+    email_count += 1
+    xml.DOC{
+      xml.Received(email.Date)
+      xml.From(email.From)
+      xml.To(email.To)
+      xml.Cc(email.Cc) if !email.Cc.blank?
+      xml.Subject(email.Subject)
+      sent_count = 0
+      xml.Text{
+      for sent in email.sentences
+        sent_count += 1
+        xml.Sent(sent, :id => "#{email_count}.#{sent_count}")
+      end
+      }
+    }
+    end
+  end
+end
+}

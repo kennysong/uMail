@@ -1,0 +1,15 @@
+<div id="command_box">
+	<%= link_to 'New email', :action => 'new' %>
+	<%= link_to 'Parse new email', :action => 'newparse' %>
+	<%= link_to 'Parse XML', :action => 'newxml' %>
+</div>	
+<h1>User's emails</h1>
+
+<table>
+  
+<% for i in @users%>
+	<tr><td><%= link_to i[0], :action => 'listby', :id => i[0] %></td><td><%=i[1]%></td></tr>
+<% end %>
+
+</table>
+

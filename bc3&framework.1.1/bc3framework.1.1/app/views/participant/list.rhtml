@@ -1,0 +1,22 @@
+<div id="command_box">
+	<%= link_to 'New participant', :action => 'new' %>
+</div>
+<h1>Listing participants</h1>
+
+<table>
+  <tr>
+  <% for column in Participant.content_columns %>
+    <th><%= column.human_name %></th>
+  <% end %>
+  </tr>
+  
+<% for participant in @participants %>
+  <tr>
+  <% for column in Participant.content_columns %>
+    <td><%=h participant.send(column.name) %></td>
+  <% end %>
+    <td><%= link_to 'Edit', :action => 'edit', :id => participant %></td>
+    <td><%= link_to 'Destroy', { :action => 'destroy', :id => participant }, :confirm => 'Are you sure?', :method => :post %></td>
+  </tr>
+<% end %>
+</table>

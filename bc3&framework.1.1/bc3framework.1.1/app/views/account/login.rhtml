@@ -1,0 +1,30 @@
+<center><h1>The BC3 Annotation Framework</h1></center>
+
+<table style="margin: 5 5 5 5;" cellspacing='15'>
+<tr>
+<td id = "login">
+<% form_tag do -%>
+<p><label for="login">Login</label><br/>
+<%= text_field_tag 'login' %></p>
+
+<p><label for="password">Password</label><br/>
+<%= password_field_tag 'password' %></p>
+<%if User.count == 0%>
+<p><%=link_to "Create Account", :action =>'signup'%></p>
+<%end%>
+<!-- Uncomment this if you want this functionality
+<p><label for="remember_me">Remember me:</label>
+<%= check_box_tag 'remember_me' %></p>
+-->
+
+<p><%= submit_tag 'Log in' %></p>
+<% end -%>
+</td>
+<td>
+<p> This software may be used to annotate other corpora. It is <%=link_to "licensed", {:action => 'license'},:popup => "true"%> under the MIT license.
+</p>
+<p>This software is available from the University of British Columbia at <a href="http://cs.ubc.ca/labs/lci/bc3.html">http://cs.ubc.ca/labs/lci/bc3.html</a>
+</p>
+</td>
+</tr>
+</table>

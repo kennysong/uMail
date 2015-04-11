@@ -1,0 +1,56 @@
+<DOC>
+<SRC>http://www.scamorama.com/pierpont1.html</SRC>
+<RECEIVED> Tue Jun 05 13:39:00 -0700 2001 </RECEIVED>
+<NAME> Dr. Ebenezer Kuffour </NAME>
+<EMAIL> ekuffour@mdk-sys.gh </EMAIL>
+<TO> Pierpont Emanuel Weaver&lt;pierpont@datasolutions.com&gt; </TO>
+<SUBJECT> Example </SUBJECT>
+<TEXT>
+DEAR SIR/Madam,
+
+WE ARE SMALL SCALE ALLUVIAL GOLD MINERS IN THE EASTERN AND WESTERN PART OF GHANA. 
+AT THE MOMENT WE HAVE IN STOCK ABOUT FIVE HUNDRED KILLOGRAMS OF ALLUVIAL GOLD DUST OF ABOUT 22.8 KARATS. 
+OUR PRICES IS (20%) TWENTY PERCENT LESS THE SECOND LONDON AT FIXING AT THE DAY OF PURCHASE. 
+PREFERABLY A DIPLOMATIC COURIER WILL BRING THE GOODS TO USA.
+YOU WILL HAVE TO ALSO TAKE OVER ALL OTHER EXPENSES LIKE GOVERNMENT TAXES, REFINERY CHARGES AND COURIER CHARGES FROM THE AIRPORT TO YOUR DESTINED SMELTER.
+
+WE ARE EXPECTING YOUR RESPONSE AS SOON AS POSSIBLE.
+
+DR. EBENEZER KUFFOUR. (EXECUTIVE MANAGER) 
+</TEXT>
+</DOC>
+
+<DOC>
+<RECEIVED> Wed Jun 19 11:33:00 -0700 2001 </RECEIVED>
+<NAME> Pierpont Emanuel Weaver </NAME>
+<EMAIL> pierpont@datasolutions.com </EMAIL>
+<TO> Dr. Ebenezer Kuffour&lt;ekuffour@mdk-sys.gh&gt; </TO>
+<SUBJECT> Example </SUBJECT>
+<TEXT>
+Dear Dr. Ebenezer Kuffour,
+From reading your message I'm convinced this is a matter which requires confidentiality, credulousness, and much sneaking about.(Meta)
+Of course I am interested in your business proposal.
+If I understand correctly, you are short selling by 20% me a supply of alluvial gold (and you get 5% of the total amount of the discount for your efforts).
+Please, I will need more details as to how to proceed from this point to the ultimate looting of my bank accounts.
+
+Yours in Peace & Fertility,
+Pierpont Emanuel Weaver, ESQ.
+</TEXT>
+</DOC>
+
+<DOC>
+<RECEIVED> Thu Jul 07 14:12:10 -0700 2001 </RECEIVED>
+<NAME> Dr. Ebenezer Kuffour </NAME>
+<EMAIL> ekuffour@mdk-sys.gh </EMAIL>
+<TO> Pierpont Emanuel Weaver&lt;pierpont@datasolutions.com&gt; </TO>
+<SUBJECT> Example </SUBJECT>
+<TEXT>
+Dear Emanuel Weaver, 
+
+Official export charges is $17,500USD per 50kg, as approved by the government. 
+total export charges for 500kgs is $175,000USD.
+I'm sure most of them can be worked out via conference call, email and FAX; although a face to face meeting in Ghana may be helpful.
+
+Sincerely yours, Ebenezer Kuffour. 
+</TEXT>
+</DOC>

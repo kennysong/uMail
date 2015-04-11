@@ -1,0 +1,12 @@
+<%= javascript_include_tag :defaults%>
+<div class="instructions"><span style="float: left;"><b>Label:</b> Please label the sentences for speech acts, meta, and subjectivity.</span><span style="float: right;"><%= link_to 'Instructions', {:action => 'pop_inst'}, :popup=>'true'%></span>&nbsp;</div>
+<h1 id="title">Subject: <%=@email_thread.Name%></h1>
+<%= render :partial => 'email', :collection => @emails%>
+<% form_tag({:action => 'update'}) do %>
+  <%= render :partial => 'label' %>
+  <%= submit_tag 'Submit' ,:onclick => "return record_labels();", :id  => "submit"%>
+<% end %>
+
+
+
+

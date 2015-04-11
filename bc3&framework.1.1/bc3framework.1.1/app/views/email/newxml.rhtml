@@ -1,0 +1,4 @@
+<% form_tag({:action => 'parsexml'},{:multipart => true, :method => 'post'}) do %>
+  <%= file_field 'email', 'email_file' %>
+  <%= submit_tag "Create" %>
+<% end %>
