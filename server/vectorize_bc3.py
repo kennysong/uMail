@@ -8,6 +8,7 @@ import pickle
 
 from scipy.spatial import distance
 from external_modules import inflect
+from sklearn import ensemble
 
 def get_threads_in_root(root):
         return list(root)
@@ -344,10 +345,12 @@ def vectorize_training_data():
                         centroid_similarity = 1 - distance.cosine(tf_idf_vector, centroid_vector)
                         local_centroid_similarity = 1 - distance.cosine(tf_local_idf_vector, local_centroid_vector)
 
-                        # Finally add this vector to our global list
+                        # Finally add this vector to our global list, changing NaN to 0
                         sentence_vector = np.array([thread_line_number, rel_position_in_thread, centroid_similarity, 
                                 local_centroid_similarity, length, tf_idf_sum, tf_idf_avg, is_question,
                                 email_number, rel_position_in_email, subject_similarity, num_recipients])
+                        for j in range(len(sentence_vector)):
+                                if math.isnan(sentence_vector[j]): sentence_vector[j] = 0
                         sentence_vectors.append(sentence_vector)
                         sentence_vectors_metadata.append((sentence_vector, {'id': sentence.attrib['id'], 'listno': thread_id}))
 
@@ -368,3 +371,23 @@ if __name__ == '__main__':
 
                 aligned_sentence_vectors.append(sentence_vector)
                 aligned_scores.append(score)
+
+        # Split into training, validation sets
+        training_vectors = aligned_sentence_vectors[:2000]
+        training_scores = aligned_scores[:2000]
+        validation_vectors = aligned_sentence_vectors[2000:]
+        validation_scores = aligned_scores[2000:]
+
+        # Run random forest
+        random_forest = ensemble.RandomForestRegressor()
+        random_forest.fit(aligned_sentence_vectors, aligned_scores)
+
+        # Validation error measure
+        validation_errors = []
+        for i in range(len(validation_vectors)):
+                validation_vector = validation_vectors[i]
+                validation_score = validation_scores[i]
+                predicted_score = random_forest.predict(validation_vector)
+                validation_errors.append((predicted_score, validation_score, abs(predicted_score - validation_score)))
+
+
