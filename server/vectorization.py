@@ -274,6 +274,9 @@ def vectorize_training_data():
                                 vocab_list_set.add(item)
         vocab_list_index = {word: index for index, word in enumerate(vocab_list)}
 
+        print(vocab_list)
+        print(vocab_list_index)
+
         print("Finished constructing vocab list")
 
         ## Load tf_idf vector from pickled cache {thread_id-sentence_id: tf_idf vector}
