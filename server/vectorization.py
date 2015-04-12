@@ -3,6 +3,7 @@ import xml.etree.ElementTree as ET
 import string
 import math
 import collections
+import pickle
 
 from scipy.spatial import distance
 from external_modules import inflect
@@ -199,14 +200,29 @@ if __name__ == '__main__':
                 thread = root[thread_index]
                 thread_sentences = get_sentences_in_thread(thread)
                 for sentence in thread_sentences:
+                        # Get the key for the sentence as thread_id-sentence_id
+                        thread_id = thread[1].text
+                        sentence_id = sentence.attrib['id']
+                        sentence_key = thread_id + sentence_id
+
                         tf_idf_vector = get_tf_idf_vector(sentence, thread, root)
-                        cached_tf_idf_vectors[sentence] = tf_idf_vector
+                        cached_tf_idf_vectors[sentence_key] = tf_idf_vector
                         tf_local_idf_vector = get_tf_local_idf_vector(sentence, thread, root)
-                        cached_tf_local_idf_vectors[sentence] = tf_local_idf_vector
+                        cached_tf_local_idf_vectors[sentence_key] = tf_local_idf_vector
                 
                 print("Calculated tf-idf for thread %i" % thread_index)
 
-        print("Finished pre-calculating tf-idf shit")
+        print("Finished pre-calculating tf-idf stuff")
+
+        ## Pickle the tf-idf dictionaries
+        tf_idf_file = open("pickled_data/cached_tf_idf_vectors" + str(partition_num + 1), "wb")
+        pick.dump(cached_tf_idf_vectors, tf_idf_file, protocol=2)
+        tf_idf_file.close()
+        tf_local_idf_file = open("pickled_data/cached_tf_local_idf_vectors" + str(partition_num + 1), "wb")
+        pick.dump(cached_tf_local_idf_vectors, tf_local_idf_file, protocol=2)
+        tf_local_idf_file.close()
+
+        print("Successfully pickled")
 
         # ## Calculate and cache all centroid vectors, in {thread: centroid_vector}
         # cached_centroid_vectors, cached_local_centroid_vectors = dict(), dict()
