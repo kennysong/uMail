@@ -183,105 +183,79 @@ if __name__ == '__main__':
 
         print("Finished constructing vocab list")
 
-        ## Calculate and cache all tf_idf vectors, in {sentence: tf-idf vector}
-        cached_tf_idf_vectors, cached_tf_local_idf_vectors = dict(), dict()
-
-        # For distributing this on multiple computers
-        thread_partitions = [(0, 15), (15, 30), (30, 40)]
-        partition_num = 1
-
-        for thread_index in range(len(root)):
-                # For distributing this on multiple computers
-                partition = thread_partitions[partition_num]
-                if not (partition[0] <= thread_index < partition[1]):
-                        continue
-
-                # Get tf-idf vector for each sentence in this thread
-                thread = root[thread_index]
-                thread_sentences = get_sentences_in_thread(thread)
-                for sentence in thread_sentences:
-                        # Get the key for the sentence as thread_id-sentence_id
-                        thread_id = thread[1].text
-                        sentence_id = sentence.attrib['id']
-                        sentence_key = thread_id + '-' + sentence_id
-
-                        tf_idf_vector = get_tf_idf_vector(sentence, thread, root)
-                        cached_tf_idf_vectors[sentence_key] = tf_idf_vector
-                        tf_local_idf_vector = get_tf_local_idf_vector(sentence, thread, root)
-                        cached_tf_local_idf_vectors[sentence_key] = tf_local_idf_vector
-                
-                print("Calculated tf-idf for thread %i" % thread_index)
-
-        print("Finished pre-calculating tf-idf stuff")
-
-        ## Pickle the tf-idf dictionaries
-        tf_idf_file = open("pickled_data/cached_tf_idf_vectors" + str(partition_num + 1), "wb")
-        pickle.dump(cached_tf_idf_vectors, tf_idf_file, protocol=2)
+        ## Load tf_idf vector from pickled cache {thread_id-sentence_id: tf_idf vector}
+        tf_idf_file = open("pickled_data/cached_tf_idf_vectors_all", "rb")
+        tf_local_idf_file = open("pickled_data/cached_tf_local_idf_vectors_all", "rb")
+        cached_tf_idf_vectors = pickle.load(tf_idf_file)
+        cached_tf_local_idf_vectors = pickle.load(tf_local_idf_file)
         tf_idf_file.close()
-        tf_local_idf_file = open("pickled_data/cached_tf_local_idf_vectors" + str(partition_num + 1), "wb")
-        pickle.dump(cached_tf_local_idf_vectors, tf_local_idf_file, protocol=2)
         tf_local_idf_file.close()
 
-        print("Successfully pickled")
+        print("Loaded tf_idf vectors")
 
-        # ## Calculate and cache all centroid vectors, in {thread: centroid_vector}
-        # cached_centroid_vectors, cached_local_centroid_vectors = dict(), dict()
+        ## Calculate and cache all centroid vectors, in {thread: centroid_vector}
+        cached_centroid_vectors, cached_local_centroid_vectors = dict(), dict()
 
-        # for thread in root:
-        #         tf_idf_vectors, tf_local_idf_vectors = [], []
-        #         sentences = get_sentences_in_thread(thread)
-        #         for sentence in sentences:
-        #                 tf_idf_vectors.append(cached_tf_idf_vectors[sentence])
-        #                 tf_local_idf_vectors.append(cached_tf_local_idf_vectors[sentence])
+        for thread in root:
+                tf_idf_vectors, tf_local_idf_vectors = [], []
+                sentences = get_sentences_in_thread(thread)
+                for sentence in sentences:
+                        # Get the key for the sentence as thread_id-sentence_id
+                        sentence_key = thread[1].text + '-' + sentence.attrib['id']
 
-        #         centroid_vector = sum(tf_idf_vectors) / len(tf_idf_vectors)
-        #         local_centroid_vector = sum(tf_local_idf_vectors) / len(tf_local_idf_vectors)
+                        tf_idf_vectors.append(cached_tf_idf_vectors[sentence_key])
+                        tf_local_idf_vectors.append(cached_tf_local_idf_vectors[sentence_key])
 
-        #         cached_centroid_vectors[thread] = centroid_vector
-        #         cached_local_centroid_vectors[thread] = local_centroid_vector
+                centroid_vector = sum(tf_idf_vectors) / len(tf_idf_vectors)
+                local_centroid_vector = sum(tf_local_idf_vectors) / len(tf_local_idf_vectors)
 
-        # print("Finished calculating centroid vectors")
+                cached_centroid_vectors[thread] = centroid_vector
+                cached_local_centroid_vectors[thread] = local_centroid_vector
 
-        # ## Traverse the XML tree, vectorizing each sentence as we encounter it
-        # sentence_vectors = []
-        # sentence_vectors_metadata = dict()
-        # for thread in root:
-        #         # Information about this thread
-        #         subject = thread[0]
-        #         thread_id = thread[1]
-        #         emails = get_emails_in_thread(thread)
-        #         thread_sentences = get_sentences_in_thread(thread)
+        print("Finished calculating centroid vectors")
 
-        #         # Traverse each sentence in a thread, top to bottom
-        #         for i in range(len(thread_sentences)):
-        #                 sentence = thread_sentences[i]
-        #                 current_email = get_email_of_sentence(sentence, emails)
+        ## Traverse the XML tree, vectorizing each sentence as we encounter it
+        sentence_vectors = [] # [np.array, ...]
+        sentence_vectors_metadata = [] # [(np.array, {metadata}), ...]
+        for thread in root:
+                # Information about this thread
+                subject = thread[0]
+                thread_id = thread[1].text
+                emails = get_emails_in_thread(thread)
+                thread_sentences = get_sentences_in_thread(thread)
 
-        #                 # Calculate all the (R14) features
-        #                 thread_line_number = i
-        #                 rel_position_in_thread = i / float(len(thread_sentences)) * 100
-        #                 length = len(sentence.text.split())
-        #                 is_question = 1 if '?' in sentence.text else 0
-        #                 email_number = int(sentence.attrib['id'].split('.')[0])
-        #                 rel_position_in_email = get_relative_position_in_email(sentence, emails)
-        #                 subject_similarity = get_subject_similarity(subject, sentence)
-        #                 num_recipients = get_num_recipients(current_email)
+                # Traverse each sentence in a thread, top to bottom
+                for i in range(len(thread_sentences)):
+                        sentence = thread_sentences[i]
+                        current_email = get_email_of_sentence(sentence, emails)
+                        sentence_key = thread[1].text + '-' + sentence.attrib['id']
+
+                        # Calculate all the (R14) features
+                        thread_line_number = i
+                        rel_position_in_thread = i / float(len(thread_sentences)) * 100
+                        length = len(sentence.text.split())
+                        is_question = 1 if '?' in sentence.text else 0
+                        email_number = int(sentence.attrib['id'].split('.')[0])
+                        rel_position_in_email = get_relative_position_in_email(sentence, emails)
+                        subject_similarity = get_subject_similarity(subject, sentence)
+                        num_recipients = get_num_recipients(current_email)
                         
-        #                 tf_idf_vector = cached_tf_idf_vectors[sentence]
-        #                 tf_idf_sum = sum(tf_idf_vector)
-        #                 tf_idf_avg = sum(tf_idf_vector) / len(tf_idf_vector)
+                        tf_idf_vector = cached_tf_idf_vectors[sentence_key]
+                        tf_idf_sum = sum(tf_idf_vector)
+                        tf_idf_avg = sum(tf_idf_vector) / len(tf_idf_vector)
+                        tf_local_idf_vector = cached_tf_local_idf_vectors[sentence_key]
 
-        #                 centroid_vector = cached_centroid_vectors[thread]
-        #                 local_centroid_vector = cached_local_centroid_vectors[thread]
+                        centroid_vector = cached_centroid_vectors[thread]
+                        local_centroid_vector = cached_local_centroid_vectors[thread]
 
-        #                 centroid_similarity = 1 - distance.cosine(tf_idf_vector, centroid_vector)
-        #                 local_centroid_similarity = 1 - distance.cosine(tf_local_idf_vector, local_centroid_vector)
+                        centroid_similarity = 1 - distance.cosine(tf_idf_vector, centroid_vector)
+                        local_centroid_similarity = 1 - distance.cosine(tf_local_idf_vector, local_centroid_vector)
 
-        #                 # Finally add this vector to our global list
-        #                 sentence_vector = np.array([thread_line_number, rel_position_in_thread, centroid_similarity, 
-        #                         local_centroid_similarity, length, tf_idf_sum, tf_idf_avg, is_question,
-        #                         email_number, rel_position_in_email, subject_similarity, num_recipients])
-        #                 sentence_vectors.append(sentence_vector)
-        #                 sentence_vectors_metadata[sentence_vector] = {'id': sentence.attrib['id'], 'listno': thread_id}
+                        # Finally add this vector to our global list
+                        sentence_vector = np.array([thread_line_number, rel_position_in_thread, centroid_similarity, 
+                                local_centroid_similarity, length, tf_idf_sum, tf_idf_avg, is_question,
+                                email_number, rel_position_in_email, subject_similarity, num_recipients])
+                        sentence_vectors.append(sentence_vector)
+                        sentence_vectors_metadata.append((sentence_vector, {'id': sentence.attrib['id'], 'listno': thread_id}))
 
-        #         print("Vectorized a thread")
+                print("Vectorized a thread")
