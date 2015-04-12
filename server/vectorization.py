@@ -351,9 +351,20 @@ def vectorize_training_data():
                         sentence_vectors.append(sentence_vector)
                         sentence_vectors_metadata.append((sentence_vector, {'id': sentence.attrib['id'], 'listno': thread_id}))
 
-                print("Vectorized a thread")
-
         return sentence_vectors, sentence_vectors_metadata
 
 if __name__ == '__main__':
         sentence_vectors, sentence_vectors_metadata = vectorize_training_data()
+        scores = get_annotated_scores()
+
+        # Align these by index
+        aligned_sentence_vectors = []
+        aligned_scores = []
+        for element in sentence_vectors_metadata:
+                sentence_vector, metadata = element[0], element[1]
+                thread_id = metadata['listno']
+                sentence_id = metadata['id']
+                score = scores[thread_id][sentence_id]
+
+                aligned_sentence_vectors.append(sentence_vector)
+                aligned_scores.append(score)
