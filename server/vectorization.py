@@ -1,134 +1,256 @@
-#Vectorize BC3 Corpus 
-
-import fileinput
 import numpy as np
 import xml.etree.ElementTree as ET
 import string
+import math
+import collections
+
+from scipy.spatial import distance
 from external_modules import inflect
 
-#BeginPiece: parse XML file and paste data into a list
-#the list[i] has the structure: [Name_of_ith_email,listno,[Received,from,To,Subject],[each line for each email],[each line for each email], ...]
+def get_sentences_in_thread(thread):
+        emails = get_emails_in_thread(thread)
 
+        thread_sentences = []
+        for email in emails:
+                sentences = get_sentences_in_email(email)
+                for sentence in sentences:
+                        thread_sentences.append(sentence)
 
-tree = ET.parse('bc3_corpus/bc3corpus.1.0/corpus_sample.xml')
-root = tree.getroot()
-p = inflect.engine()
-Corpus = [[] for i in range(len(root))]
+        return thread_sentences
 
-for i in range(len(root)):
-        Corpus[i].append(root[i][0].text)
-        Corpus[i].append(root[i][1].text)
-        for j in range(2,len(root[i])):
-                doc_temp = []
-                for k in range(4):
-                        doc_temp.append(root[i][j][k].text)
-                Corpus[i].append(doc_temp)
+def get_emails_in_thread(thread):
+        emails = []
+        for i in range(len(thread)):
+                if thread[i].tag == 'DOC':
+                        emails.append(thread[i])
+        return emails
 
-                text_temp = []                        
-                for k in range(len(root[i][j][4])):
-                        text_temp.append(root[i][j][4][k].text)
-                Corpus[i].append(text_temp)
-        
-#EndPiece
+def get_sentences_in_email(email):
+        text_tag = None
+        for i in range(len(email)):
+                if email[i].tag == 'Text':
+                        text_tag = email[i]
+        return list(text_tag)
 
-#BeginPiece: Turn email into vectors
+def get_relative_position_in_email(sentence, emails):
+        for email in emails:
+                sentences = get_sentences_in_email(email)
+                if sentence in sentences:
+                        return sentences.index(sentence) / float(len(sentences)) * 100
 
-def SentenceFeature(root,thread,DOC,Text,Sent):
-        #input a <Sent> </Sent>, meaning a sentence, generate the feature vector for the sentence
-        #Input must be in the form of root[i][j][k][l] with l being the position of the email in the thread
-        feature = []
+def clean_up_words(word_list):
+        # Make lowercase
+        clean_word_list = [word.lower() for word in word_list]
 
-        #Text Features include:
-                #Thread Line Number
-                #Relative Pos. in Thread
-                #Centroid Similarity
-                #Local Centroid Similarity
-                #Length
-                #TF*IDF Sum
-                #TF*IDF Average
-                #Is Question
+        # Remove non alphabet or numbers
+        for i in range(len(clean_word_list)):
+                clean_word_list[i] = ''.join([t for t in clean_word_list[i] if (t in '1234567890' or t in string.ascii_lowercase)])
 
-        #thread line number
-        feature.append[Sent+1]
+        # Make singular
+        for i in range(len(clean_word_list)):
+                if inflect_engine.singular_noun(clean_word_list[i]) != False:
+                                clean_word_list[i] = inflect_engine.singular_noun(clean_word_list[i])
 
-        #Relave Pos. in thread
-        feature.append[(Sent+1)/len(Text)*100]
+        return clean_word_list
 
-        #Centroid similarity
+def get_subject_similarity(subject, sentence):
+        # Split into lists of words
+        subject_words = clean_up_words(subject.text.split())
+        sentence_words = clean_up_words(sentence.text.split())
 
-        #Local centroid similarity
+        # Get # of words occurring in both
+        overlap = len(set(subject_words).intersection(set(sentence_words)))
+        return overlap
 
-        #Length
-        sentence = root[thread][DOC][Text][Sent].text
-        sentence_length = len(sentence.split())
-        feature.append(sentence_length)
+def get_email_of_sentence(sentence, emails):
+        for email in emails:
+                sentences = get_sentences_in_email(email)
+                if sentence in sentences:
+                        return email
 
-        #TF*IDF Sum
+def get_num_recipients(email):
+        num_recipients = 0
+        for email_tag in email:
+                if email_tag.tag == 'To' or email_tag.tag == 'Cc':
+                        if email_tag.text is None: continue
+                        num_recipients += email_tag.text.count('@')
+        return num_recipients
 
-        #TF*IDF Average
+def get_threads_in_root(root):
+        return list(root)
 
-        #Is question
-        if "?" in sentence:
-                feature.append("IsQuestion")
-        else:
-                feature.append("IsNotQuestion")
+def get_words_in_sentence(sentence):
+        return sentence.text.split()
+
+def get_words_in_email(email):
+        word_list = []
+        sentences = get_sentences_in_email(email)
+        for sentence in sentences:
+                word_list += get_words_in_sentence(sentence)
+        return word_list
+
+def get_words_in_thread(thread):
+        words = []
+        emails = get_emails_in_thread(thread)
+        for email in emails:
+                sentences = get_sentences_in_email(email)
+                for sentence in sentences:
+                        words += get_words_in_sentence(sentence)
+        return words
+
+def get_tf_idf_vector(sentence, thread, root):
+        threads = get_threads_in_root(root)
+        thread_words = clean_up_words(get_words_in_thread(thread))
+        clean_sentence = clean_up_words(sentence.text.split())
+
+        # Calculate term-frequency, number of times word appears in thread
+        tf_vector = np.zeros(len(cached_vocab_list_index)) # Global variable, see below
+        for word in clean_sentence:
+                occurrences = cached_word_counts_per_thread[thread][word] # Global variable, see below
+                tf = occurrences / float(len(thread_words))
+                word_index = cached_vocab_list_index[word]
+                tf_vector[word_index] = tf
+
+        # Calculate inverse document frequency, on # of threads in entire corpus that have the word
+        idf_vector = np.zeros(len(cached_vocab_list_index))
+        thread_words = [set(clean_up_words(get_words_in_thread(thread))) for thread in threads]
+        for word in clean_sentence:
+                num_threads_with_word = 0.0
+                for thread_word_list in thread_words:
+                        if word in thread_word_list: num_threads_with_word += 1
+                idf = math.log(len(threads) / num_threads_with_word)
+                word_index = cached_vocab_list_index[word]
+                idf_vector[word_index] = idf
+
+        # Get tf*idf vector
+        tf_idf_vector = tf_vector * idf_vector
+
+        return tf_idf_vector
+
+def get_tf_local_idf_vector(sentence, thread, root):
+        thread_words = clean_up_words(get_words_in_thread(thread))
+        clean_sentence = clean_up_words(sentence.text.split())
+
+        # Calculate term-frequency, number of times word appears in thread
+        tf_vector = np.zeros(len(cached_vocab_list_index)) # Global variable, see below
+        for word in clean_sentence:
+                occurrences = cached_word_counts_per_thread[thread][word] # Global variable, see below
+                tf = occurrences / float(len(thread_words))
+                word_index = cached_vocab_list_index[word]
+                tf_vector[word_index] = tf
+
+        # Calculate inverse document frequency, on # of emails in thread that have the word
+        idf_vector = np.zeros(len(cached_vocab_list_index))
+        emails = get_emails_in_thread(thread)
+        email_words = [set(clean_up_words(get_words_in_email(email))) for email in emails]
+        for word in clean_sentence:
+                num_emails_with_word = 0.0
+                for email_word_list in email_words:
+                        if word in email_word_list: num_emails_with_word += 1
+                idf = math.log(len(emails) / num_emails_with_word)
+                word_index = cached_vocab_list_index[word]
+                idf_vector[word_index] = idf
+
+        # Get tf*idf vector
+        tf_idf_vector = tf_vector * idf_vector
+
+        return tf_idf_vector
+
+if __name__ == '__main__':
+        ## Set up XML tree
+        tree = ET.parse('bc3_corpus/bc3corpus.1.0/corpus.xml')
+        root = tree.getroot()
+        inflect_engine = inflect.engine()
+
+        ## Get word occurrence counts for each thread
+        cached_word_counts_per_thread = dict()
+        for thread in root:
+                words = get_words_in_thread(thread)
+                word_counts = collections.Counter(words)
+                cached_word_counts_per_thread[thread] = word_counts
+        print("Finished getting word counts for each thread")
+
+        ## Calculate vocab list for entire corpus
+        vocab_list, vocab_list_set = [], set()
+        for thread in root:
+                thread_vocab_list = clean_up_words(get_words_in_thread(thread))
+                for item in thread_vocab_list:
+                        if item not in vocab_list_set: 
+                                vocab_list.append(item)
+                                vocab_list_set.add(item)
+        cached_vocab_list_index = {word: index for index, word in enumerate(vocab_list)}
+
+        print("Finished constructing vocab list")
+
+        ## Calculate and cache all tf_idf vectors, in {sentence: tf-idf vector}
+        cached_tf_idf_vectors, cached_tf_local_idf_vectors = dict(), dict()
+
+        for thread in root:
+                thread_sentences = get_sentences_in_thread(thread)
+                for sentence in thread_sentences:
+                        tf_idf_vector = get_tf_idf_vector(sentence, thread, root)
+                        cached_tf_idf_vectors[sentence] = tf_idf_vector
+                        tf_local_idf_vector = get_tf_local_idf_vector(sentence, thread, root)
+                        cached_tf_local_idf_vectors[sentence] = tf_local_idf_vector
                 
-        #Donewith text feature, moving on to email feature
+                print("Calculated tf-idf for a thread")
 
-        #Email feature includes:
-                #Email number
-                #Relative Pos. in email
-                #Subject similarity
-                #Num_replies is not included as a feature (beginning of page 36)
-                #Num_recipients
-                #IsHiden is not included as a feature (end of page 34) 
+        print("Finished pre-calculating tf-idf shit")
 
-        #Email number 
-        feature.append(DOC+1)
+        ## Calculate and cache all centroid vectors, in {thread: centroid_vector}
+        cached_centroid_vectors, cached_local_centroid_vectors = dict(), dict()
 
-        #Relative Pos. in email
-        feature.append((DOC+1)/(len(root[thread])-2)*100)
+        for thread in root:
+                tf_idf_vectors, tf_local_idf_vectors = [], []
+                sentences = get_sentences_in_thread(thread)
+                for sentence in sentences:
+                        tf_idf_vectors.append(cached_tf_idf_vectors[sentence])
+                        tf_local_idf_vectors.append(cached_tf_local_idf_vectors[sentence])
 
-        #Subject Similarity
-        all_sentence = [] #include all sentence in the email
-        for t in range(len(root[thread][DOC][Text])):
-                all_sentence.append(root[i][j][k][t].text)
+                centroid_vector = sum(tf_idf_vectors) / len(tf_idf_vectors)
+                local_centroid_vector = sum(tf_local_idf_vectors) / len(tf_local_idf_vectors)
 
-        all_sentence = [all_sentence[t].split() for t in range(len(all_sentence))]
-        all_sentence = [m for n in all_sentence for m in n]
-        print all_sentence
-        all_sentence = [all_sentence[m].lower() for m in range(len(all_sentence))]
+                cached_centroid_vectors[thread] = centroid_vector
+                cached_local_centroid_vectors[thread] = local_centroid_vector
 
-        subject_line = root[thread][DOC][3].text
-        subject_line = subject_line.lower()
-        subject_line = subject_line.split()
+        print("Finished calculating centroid vectors")
 
-        for i in range(len(all_sentence)):
-                all_sentence[i] = ''.join([t for t in all_sentence[i] if (t in '1234567890' or t in string.ascii_lowercase)])
-                if p.singular_noun(all_sentence[i]) != False:
-                        all_sentence[i] = p.singular_noun(all_sentence[i])
+        ## Traverse the XML tree, vectorizing each sentence as we encounter it
+        sentence_vectors = []
+        for thread in root:
+                subject = thread[0]
+                emails = get_emails_in_thread(thread)
+                thread_sentences = get_sentences_in_thread(thread)
 
-        for i in range(len(subject_line)):
-                subject_line[i] = ''.join([t for t in subject_line[i] if (t in '1234567890' or t in string.ascii_lowercase)])
-                if p.singular_noun(subject_line[i]) != False:
-                        subject_line[i] = p.singular_noun(subject_line[i])
-                
-        count = 0
+                # Traverse each sentence in a thread, top to bottom
+                for i in range(len(thread_sentences)):
+                        sentence = thread_sentences[i]
+                        current_email = get_email_of_sentence(sentence, emails)
 
-        for item in all_sentence:
-                if item in subject_line:
-                        count += 1
-                
-        feature.append(count)
+                        # Calculate all the (R14) features
+                        thread_line_number = i
+                        rel_position_in_thread = i / float(len(thread_sentences)) * 100
+                        length = len(sentence.text.split())
+                        is_question = 1 if '?' in sentence.text else 0
+                        email_number = int(sentence.attrib['id'].split('.')[0])
+                        rel_position_in_email = get_relative_position_in_email(sentence, emails)
+                        subject_similarity = get_subject_similarity(subject, sentence)
+                        num_recipients = get_num_recipients(current_email)
+                        
+                        tf_idf_vector = cached_tf_idf_vectors[sentence]
+                        tf_idf_sum = sum(tf_idf_vector)
+                        tf_idf_avg = sum(tf_idf_vector) / len(tf_idf_vector)
 
-        #Num_recipients thread,DOC,Text,Sent  i,j,k,l
-        recipients = root[thread][DOC][1].text + root[thread][DOC][2].text
+                        centroid_vector = cached_centroid_vectors[thread]
+                        local_centroid_vector = cached_local_centroid_vectors[thread]
 
-        count = 0
+                        centroid_similarity = 1 - distance.cosine(tf_idf_vector, centroid_vector)
+                        local_centroid_similarity = 1 - distance.cosine(tf_local_idf_vector, local_centroid_vector)
 
-        for i in recipients:
-                if "@" in i: count += 1
+                        # Finally add this vector to our global list
+                        sentence_vector = np.array([thread_line_number, rel_position_in_thread, centroid_similarity, 
+                                local_centroid_similarity, length, tf_idf_sum, tf_idf_avg, is_question,
+                                email_number, rel_position_in_email, subject_similarity, num_recipients])
+                        sentence_vectors.append(sentence_vector)
 
-        feature.append(count)
-
-        #
+                print("Vectorized a thread")
