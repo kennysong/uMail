@@ -3,6 +3,7 @@ import xml.etree.ElementTree as ET
 import string
 import math
 import collections
+import copy
 import pickle
 
 from scipy.spatial import distance
@@ -156,6 +157,99 @@ def get_tf_local_idf_vector(sentence, thread, root, word_counts_per_thread, voca
         tf_idf_vector = tf_vector * idf_vector
 
         return tf_idf_vector
+
+def get_annotation_from_thread(thread):
+        annotations = []
+        for i in range(len(thread)):
+                if thread[i].tag == "annotation":
+                        annotations.append(thread[i])
+        return annotations
+
+def get_sentences_from_annotations(annotation):
+        sentences = []
+        for i in range(len(annotation)):
+                if annotation[i].tag == "sentences":
+                        sentences.append(annotation[i])
+        return sentences 
+
+def get_sentenceID_from_sentences(sentence): #in string form 
+        sentenceID = []
+        for item in sentence:
+                sentenceID.append(item.attrib["id"])
+        return sentenceID
+
+def get_sentenceID_from_thread(thread): #in string form 
+        sentenceID = []
+        annotations = get_annotation_from_thread(thread)
+        sentences = []
+
+        for annotation in annotations:
+                sentences.append(get_sentences_from_annotations(annotation))
+
+        for sentence in sentences:
+                sentenceID.append(get_sentenceID_from_sentences(sentence[0]))
+
+        sentenceID = [sentenceID[i][j] for i in range(len(sentenceID)) for j in range(len(sentenceID[i]))]
+
+        return sentenceID
+
+def normalize(score):
+        tree_corpus = ET.parse("bc3_corpus/bc3corpus.1.0/corpus.xml")
+        root_corpus = tree_corpus.getroot() 
+
+        corpus_sentence = dict() #a dictionary, each each is a dictionary of keys,values being sentence ID and sentence string respectivelsenten 
+
+        for thread in root_corpus:
+                sentence_id = dict()
+                sentences = get_sentences_in_thread(thread)
+
+                for sentence in sentences: 
+                        sentence_id[sentence.attrib['id']] = sentence.text
+
+                corpus_sentence[thread[1].text] = sentence_id 
+
+        threadID_in_corpus = score.keys()
+
+        for thread in threadID_in_corpus:
+                sentenceID_in_thread = score[thread].keys()
+
+                for sentence in sentenceID_in_thread: 
+                        score[thread][sentence] = float(score[thread][sentence])/len(corpus_sentence[thread][sentence].split() )
+
+        return score
+
+def get_annotated_scores():
+        tree_annotation = ET.parse('bc3_corpus/bc3corpus.1.0/annotation.xml')
+        root_annotation = tree_annotation.getroot()
+
+        tree_corpus = ET.parse("bc3_corpus/bc3corpus.1.0/corpus.xml")
+        root_corpus = tree_corpus.getroot()
+
+        #Creating a dictionary of thread number, each of which is another dictionary of the ID of each sentences in a thread
+        corpus = dict()
+
+        for thread in root_corpus:
+                sentence_id = dict()
+                sentences = get_sentences_in_thread(thread)
+
+                for sentence in sentences: 
+                        sentence_id[sentence.attrib['id']] = 0
+
+                corpus[thread[1].text] = sentence_id 
+
+        score = copy.deepcopy(corpus)
+
+        for thread in root_annotation:
+                sentenceID = get_sentenceID_from_thread(thread) #Getting all the sentences in the 3 summaries in annotation file 
+
+                sentenceID_in_thread = score[thread[0].text].keys()
+
+                for sentence in sentenceID_in_thread:
+                        score[thread[0].text][sentence] = sentenceID.count(sentence)
+
+        score = normalize(score)
+
+        return score
 
 def vectorize_training_data():
         ## Set up XML tree
