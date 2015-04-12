@@ -187,7 +187,7 @@ if __name__ == '__main__':
 
         # For distributing this on multiple computers
         thread_partitions = [(0, 15), (15, 30), (30, 40)]
-        partition_num = 0
+        partition_num = 1
 
         for thread_index in range(len(root)):
                 # For distributing this on multiple computers
