@@ -1,0 +1,1 @@
+#Turn email into Vector 
