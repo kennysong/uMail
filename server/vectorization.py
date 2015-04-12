@@ -203,7 +203,7 @@ if __name__ == '__main__':
                         # Get the key for the sentence as thread_id-sentence_id
                         thread_id = thread[1].text
                         sentence_id = sentence.attrib['id']
-                        sentence_key = thread_id + sentence_id
+                        sentence_key = thread_id + '-' + sentence_id
 
                         tf_idf_vector = get_tf_idf_vector(sentence, thread, root)
                         cached_tf_idf_vectors[sentence_key] = tf_idf_vector
