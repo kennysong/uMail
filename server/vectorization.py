@@ -188,7 +188,7 @@ if __name__ == '__main__':
 
         # For distributing this on multiple computers
         thread_partitions = [(0, 15), (15, 30), (30, 40)]
-        partition_num = 0
+        partition_num = 1
 
         for thread_index in range(len(root)):
                 # For distributing this on multiple computers
@@ -216,10 +216,10 @@ if __name__ == '__main__':
 
         ## Pickle the tf-idf dictionaries
         tf_idf_file = open("pickled_data/cached_tf_idf_vectors" + str(partition_num + 1), "wb")
-        pick.dump(cached_tf_idf_vectors, tf_idf_file, protocol=2)
+        pickle.dump(cached_tf_idf_vectors, tf_idf_file, protocol=2)
         tf_idf_file.close()
         tf_local_idf_file = open("pickled_data/cached_tf_local_idf_vectors" + str(partition_num + 1), "wb")
-        pick.dump(cached_tf_local_idf_vectors, tf_local_idf_file, protocol=2)
+        pickle.dump(cached_tf_local_idf_vectors, tf_local_idf_file, protocol=2)
         tf_local_idf_file.close()
 
         print("Successfully pickled")
