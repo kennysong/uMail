@@ -5,10 +5,14 @@ import math
 import collections
 import copy
 import pickle
+import os
+import corpus
+import StringIO
 
 from scipy.spatial import distance
 from external_modules import inflect
 from sklearn import ensemble
+from sklearn.externals import joblib
 
 def get_threads_in_root(root):
     return list(root)
@@ -107,9 +111,9 @@ def get_tf_idf_vector(sentence, thread, root, word_counts_per_thread, vocab_list
     clean_sentence = clean_up_words(sentence.text.split())
 
     # Calculate term-frequency, number of times word appears in thread
-    tf_vector = np.zeros(len(vocab_list_index)) # Global variable, see below
+    tf_vector = np.zeros(len(vocab_list_index))
     for word in clean_sentence:
-        occurrences = word_counts_per_thread[thread][word] # Global variable, see below
+        occurrences = word_counts_per_thread[thread][word]
         tf = occurrences / float(len(thread_words))
         word_index = vocab_list_index[word]
         tf_vector[word_index] = tf
@@ -254,7 +258,8 @@ def get_annotated_scores():
 
 def vectorize_training_data():
     ## Set up XML tree
-    tree = ET.parse('bc3_corpus/bc3corpus.1.0/corpus.xml')
+    # tree = ET.parse('bc3_corpus/bc3corpus.1.0/corpus.xml')
+    tree = ET.parse(StringIO.StringIO(corpus.corpus))
     root = tree.getroot()
 
     ## Get word occurrence counts for each thread
@@ -356,7 +361,7 @@ def vectorize_training_data():
 
     return sentence_vectors, sentence_vectors_metadata
 
-if __name__ == '__main__':
+def train_and_review_classifier():
     sentence_vectors, sentence_vectors_metadata = vectorize_training_data()
     scores = get_annotated_scores()
 
@@ -373,14 +378,14 @@ if __name__ == '__main__':
         aligned_scores.append(score)
 
     # Split into training, validation sets
-    training_vectors = aligned_sentence_vectors[:2000]
-    training_scores = aligned_scores[:2000]
-    validation_vectors = aligned_sentence_vectors[2000:]
-    validation_scores = aligned_scores[2000:]
+    training_vectors = aligned_sentence_vectors[:3000]
+    training_scores = aligned_scores[:3000]
+    validation_vectors = aligned_sentence_vectors[3000:]
+    validation_scores = aligned_scores[3000:]
 
     # Run random forest
     random_forest = ensemble.RandomForestRegressor()
-    random_forest.fit(aligned_sentence_vectors, aligned_scores)
+    random_forest.fit(training_vectors, training_scores)
 
     # Validation error measure
     validation_errors = []
@@ -388,6 +393,17 @@ if __name__ == '__main__':
         validation_vector = validation_vectors[i]
         validation_score = validation_scores[i]
         predicted_score = random_forest.predict(validation_vector)
-        validation_errors.append((predicted_score, validation_score, abs(predicted_score - validation_score)))
+        validation_errors.append(abs(predicted_score - validation_score))
 
+    print(validation_errors)
 
+def server_train_classifier():
+    import vectors
+
+    random_forest = ensemble.RandomForestRegressor()
+    random_forest.fit(vectors.aligned_sentence_vectors, vectors.aligned_scores)
+
+    return random_forest
+
+if __name__ == '__main__':
+    pass
