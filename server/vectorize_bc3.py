@@ -6,7 +6,7 @@ import collections
 import copy
 import pickle
 import os
-import corpus
+##import corpus
 import StringIO
 
 from scipy.spatial import distance
@@ -397,11 +397,10 @@ def train_and_review_classifier():
 
     print(validation_errors)
 
-def server_train_classifier():
-    import vectors
+def server_train_classifier(aligned_sentence_vectors,aligned_scores):
 
     random_forest = ensemble.RandomForestRegressor()
-    random_forest.fit(vectors.aligned_sentence_vectors, vectors.aligned_scores)
+    random_forest.fit(aligned_sentence_vectors,aligned_scores)
 
     return random_forest
 

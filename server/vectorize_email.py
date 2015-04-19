@@ -1,4 +1,4 @@
-
+#Begin code
 
 to_Cc = "NYU Shanghai Students CO17 <nyushanghai-students-co17-group@nyu.edu>, NYU Shanghai Students CO18 <nyushanghai-students-co18-group@nyu.edu>"
 
@@ -6,7 +6,6 @@ email_message = "My fellow students. A belated Happy New Year and warm wishes fo
 
 title = "Constitution Revisions & Elections Info Meeting"
 
-#Begin code
 
 import numpy as np
 import xml.etree.ElementTree as ET
@@ -86,26 +85,6 @@ def tfidf(word,email_message,threads,words_of_emails):
 
     return (tf*idf)
 
-# def tdif_vector(email_message,vocab_list):
-#     sentences = []
-#     for sentence in email_message:
-#         sentences.append(sentence)
-
-#     tfidf_vector = np.zeros(len(vocab_list))
-
-#     words_of_sentence = []
-#     for sentence in sentences[i]:
-#         words_of_sentence.append(clean_up_words(sentence.split()))
-    
-#     sentence_tfidf = []
-#     for word in words_of_sentence:
-#         sentence_tfidf.append(tfidf(word,email_message))
-
-#     for i in range(tfidf_vector):
-#         if vocab_list[i] in words_of_sentence: tfidf_vector[i] = sentence_tfidf[sentence_tfidf.index(vocab_list[i])]
-
-#     return tfidf_vector    
-
 def centroid_vector_tfidfvector(email_message,vocab_list,threads,words_of_emails):
     tfidf_allsentence_in_email = np.array([np.zeros(len(vocab_list)) for j in range(len(email_message))])
 
@@ -121,40 +100,7 @@ def centroid_vector_tfidfvector(email_message,vocab_list,threads,words_of_emails
             if vocab_list[j] in words_of_sentence: tfidf_allsentence_in_email[i][j] = sentence_tfidf[sentence_tfidf.index(vocab_list[j])]
 
     centroid_vector = sum(tfidf_allsentence_in_email)/len(tfidf_allsentence_in_email)
-    print "centroid"
-
     return tfidf_allsentence_in_email, centroid_vector 
-
-    # print "centroi"
-    # sentences = []
-    # for sentence in email_message:
-    #     sentences.append(sentence)
-
-    # tfidf_allsentence_in_email = np.array([np.zeros(len(vocab_list)) for j in range(len(sentences))])
-
-    # for i in range(len(sentences)):
-    #     print i 
-    #     words_of_sentence = []
-    #     for sentence in sentences:
-    #         print sentence
-    #         print
-    #         words_of_sentence.append(clean_up_words(sentence.split()))
-    #     print "words "
-
-    #     sentence_tfidf = []
-    #     count = 0 
-    #     for word in words_of_sentence:
-    #         count += 1 
-    #         sentence_tfidf.append(tfidf(word,email_message,threads,words_of_emails))
-    #     print count
-
-    #     for j in range(len(tfidf_allsentence_in_email[i])):
-    #         if vocab_list[j] in words_of_sentence: tfidf_allsentence_in_email[i][j] = sentence_tfidf[sentence_tfidf.index(vocab_list[j])]
-
-    # centroid_vector = sum(tfidf_allsentence_in_email)/len(tfidf_allsentence_in_email)
-    # print "centroid"
-
-    # return tfidf_allsentence_in_email, centroid_vector 
     
 def vectorize_sentence(email_message,sentence,vocab_list,title,to_Cc,tfidf_allsentence_in_email,centroid_vector):
     vector = []
@@ -198,7 +144,7 @@ def vectorize_sentence(email_message,sentence,vocab_list,title,to_Cc,tfidf_allse
     title = clean_up_words(title.split())
 
     sentence_word_clean = clean_up_words(sentence.split())
-    vector.append(set(title).intersection(sentence_word_clean))
+    vector.append(len(set(title).intersection(sentence_word_clean)))
 
     #num recipients
     vector.append(to_Cc.count("@"))
@@ -225,7 +171,7 @@ def vectorize_email(email_message,vocab_list,title,to_Cc):
         sentence_cleaned_up = clean_up_words(sentence.split())
         for word in sentence_cleaned_up:
             words_of_emails.append(word)
-
+            
     tfidf_allsentence_in_email,centroid_vector = centroid_vector_tfidfvector(email_message,vocab_list,threads,words_of_emails)
 
     for sentence in email_message:
@@ -234,6 +180,3 @@ def vectorize_email(email_message,vocab_list,title,to_Cc):
     return vector 
 
 vector = vectorize_email(email_message,vocab_list,title,to_Cc)
-
-for item in vector:
-    print item
