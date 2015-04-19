@@ -12958,6 +12958,7 @@ root  = tree.getroot()
 
 number_sentence_last_4_emails = 0 
 
+#Calculating the number of sentences in the last 4 email threads
 for i in range(1,5):
     for j in range(len(root[-i])):
         if root[-i][j].tag == "DOC":
@@ -12973,6 +12974,7 @@ training_set_score  = aligned_scores[0:(3222-number_sentence_last_4_emails-1)]
 validation_set_vector = aligned_sentence_vectors[(3222-number_sentence_last_4_emails):3221]
 validation_set_score  = aligned_scores[(3222-number_sentence_last_4_emails):3221]
 
+#traing the classifier on the first 36 threads
 random_forest = vectorize_bc3.server_train_classifier(training_set_vector,training_set_score)
 
 validation_set_predicted_score = [] 
