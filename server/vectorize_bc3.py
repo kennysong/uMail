@@ -6,8 +6,6 @@ import collections
 import copy
 import pickle
 import os
-##import corpus
-import StringIO
 
 from scipy.spatial import distance
 from external_modules import inflect
@@ -283,8 +281,8 @@ def vectorize_training_data():
     print("Finished constructing vocab list")
 
     ## Load tf_idf vector from pickled cache {thread_id-sentence_id: tf_idf vector}
-    tf_idf_file = open("pickled_data/cached_tf_idf_vectors_all", "rb")
-    tf_local_idf_file = open("pickled_data/cached_tf_local_idf_vectors_all", "rb")
+    tf_idf_file = open("data/cached_tf_idf_vectors_all", "rb")
+    tf_local_idf_file = open("data/cached_tf_local_idf_vectors_all", "rb")
     cached_tf_idf_vectors = pickle.load(tf_idf_file)
     cached_tf_local_idf_vectors = pickle.load(tf_local_idf_file)
     tf_idf_file.close()
@@ -398,7 +396,6 @@ def train_and_review_classifier():
     print(validation_errors)
 
 def server_train_classifier(aligned_sentence_vectors,aligned_scores):
-
     random_forest = ensemble.RandomForestRegressor()
     random_forest.fit(aligned_sentence_vectors,aligned_scores)
 
