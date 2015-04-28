@@ -11,7 +11,7 @@ root  = tree.getroot()
 number_sentence_last_4_emails = 0 
 
 #sequence of root: root -> thread -> DOC -> text -> sent (each sent being one sentence in an email)
-# the length of the summary is limited to 30% of the original length of the email 
+# the length of the summary is limited to 30% of  the original length of the email 
 
 #definition of weighted recall:
 #The recall score measures the percentage of important sentences that were chosen

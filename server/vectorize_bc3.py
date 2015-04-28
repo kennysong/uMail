@@ -1,3 +1,5 @@
+#question: can get split vectorize_bc3 and get_annotated score into two .py files ?
+
 import numpy as np
 import xml.etree.ElementTree as ET
 import string
