@@ -1,3 +1,5 @@
+#note: must note that sentences of equal importance might be arbitrarily included or excluded from the ideal summary because of sorting and length limit
+
 import operator
 from data.length_each_sentence_data import *
 from data.annotation_score_each_sentence_data import *
@@ -43,7 +45,10 @@ def return_ideal_summary(summary, thread_listno):
 
 if __name__ == '__main__': 
     summary = dict()
+
+    #update summary with the ideal summary of each <thread>
     for key in annotation_score_each_sentence:
         summary[key] = {}
         return_ideal_summary(summary, key)
+
     print summary
