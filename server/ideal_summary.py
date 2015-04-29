@@ -1,8 +1,8 @@
 #note: must note that sentences of equal importance might be arbitrarily included or excluded from the ideal summary because of sorting and length limit
 
 import operator
-from data.length_each_sentence_data import *
-from data.annotation_score_each_sentence_data import *
+
+from handy_function import *
 
 #global variable
 	#summary (type:dict) with the format
@@ -20,35 +20,46 @@ def return_ideal_summary_with_length_limit(length_limit, sentences_sorted_by_imp
 
 	ideal_summary_word_count = 0
 
-	ideal_summary = []
+	ideal_summary_for_thread = []
 
 	for sentence in sentences_sorted_by_importance:
-		ideal_summary.append(sentence[0])
-		ideal_summary_word_count += ideal_summary_word_count + length_each_sentence[thread_listno][sentence[0]]
+		ideal_summary_for_thread.append(sentence[0])
+		ideal_summary_word_count += ideal_summary_word_count + num_word_in_each_sentence[thread_listno][sentence[0]]
 		if ideal_summary_word_count >= length_limit:
-			return ideal_summary
+			return ideal_summary_for_thread
 
 
-def return_ideal_summary(summary, thread_listno):
+def return_ideal_summary(ideal_summary, thread_listno):
     
     #length_limit is the length limit of ideal summary - 30% of original email by word count 
-    length_limit = sum(length_each_sentence[thread_listno].values())/100*30
+    length_limit = sum(num_word_in_each_sentence[thread_listno].values())/100*30
 
     #Sort each sentence in a <thread> according to annotation score
     sentences_sorted_by_importance = sort_dict_by_value(annotation_score_each_sentence[thread_listno])
 
-    ideal_summary = return_ideal_summary_with_length_limit(length_limit, sentences_sorted_by_importance, thread_listno)
+    ideal_summary_for_thread = return_ideal_summary_with_length_limit(length_limit, sentences_sorted_by_importance, thread_listno)
 
-    ideal_summary = sorted(ideal_summary)        
+    ideal_summary_for_thread = sorted(ideal_summary_for_thread)        
 
-    summary[thread_listno] = ideal_summary
+    ideal_summary[thread_listno] = ideal_summary_for_thread
 
 if __name__ == '__main__': 
-    summary = dict()
+    
+    #loading necessary data from pickled files
+    f = open("data/num_word_in_each_sentence.pck", "r")
+    num_word_in_each_sentence = pickle.load(f)
+    f.close()
 
-    #update summary with the ideal summary of each <thread>
+    f = open("data/annotation_score_each_sentence.pck", "r")
+    annotation_score_each_sentence = pickle.load(f)
+    f.close()
+    #done loading necessary data
+
+    ideal_summary = dict()
+
+    #update ideal_summary with the ideal summary of each <thread>
     for key in annotation_score_each_sentence:
-        summary[key] = {}
-        return_ideal_summary(summary, key)
+        ideal_summary[key] = {}
+        return_ideal_summary(ideal_summary, key)
 
-    print summary
+    pickle_data(ideal_summary, "ideal_summary")
