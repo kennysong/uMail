@@ -49,7 +49,4 @@ if __name__ == '__main__':
     length = dict()
     return_length_each_sentence_in_root(length)
 
-    #pick length dictionary
-    f = open("data/length_each_sentence.pck","w")
-    pickle.dump(length,f)
-    f.close()
+    print length

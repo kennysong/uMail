@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as ET
 import operator
 import pickle
+from data.length_each_sentence import *
 
 tree = ET.parse("bc3_corpus/bc3corpus.1.0/annotation.xml")
 root = tree.getroot() 
@@ -62,16 +63,9 @@ if __name__ == '__main__':
     update_summary(summary)
 
     #normalization by sentence length
-    f = open("data/length_each_sentence.pck" , "r")
-    length_each_sentence = pickle.load(f)
 
     for thread in summary:
         for sentence in summary[thread]:
             summary[thread][sentence] = (summary[thread][sentence])/(length_each_sentence[thread][sentence])
 
-    f.close()
-
-    #pickle annotation_score_each_sentence
-    s = open("data/annotation_score_each_sentence.pck", "w")
-    pickle.dump(summary,s)
-    s.close()
+    print summary
