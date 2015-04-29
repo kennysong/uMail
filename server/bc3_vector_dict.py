@@ -3,7 +3,6 @@
 import xml.etree.ElementTree as ET
 import copy
 from data.vectorized_bc3_data import *
-from thread_listno_of_current_thread import *
 
 from handy_function import *
 

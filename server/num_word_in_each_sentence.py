@@ -37,7 +37,6 @@ def update_num_word_in_each_sentence_by_each_thread(num_word_in_each_sentence, t
         if doc.tag == "DOC":
             update_num_word_in_each_sentence_by_each_doc(num_word_in_each_sentence,thread_listno,doc)
 
-
 def num_word_in_each_sentence_in_root(num_word_in_each_sentence):
     #update num_word_in_each_sentence(type:dic) with the num_word_in_each_sentence of sentences in <root>
     

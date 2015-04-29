@@ -18,6 +18,3 @@ def pickle_data(data, file_name = str):
 	pickle.dump(data,f)
 
 	f.close()
-
-if __name__ == '__main__':
-	main()
