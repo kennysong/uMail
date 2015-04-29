@@ -113,20 +113,32 @@ def get_num_recipients(email):
     return num_recipients
 
 def get_relative_position_in_email(sentence, email):
-    '''Returns the relative position of the sentence in the email.
+    '''Returns the # of sentences before divided by total in the email.
         - sentence can be an XML tree element and email can be a XML tree element.
         - sentence can be a string and an email can be a list of strings.'''
+
+    # If sentence is an XML tree element, convert to string
+    if isinstance(sentence, ET.Element):
+        sentence = sentence.text
+
+    # Get list of sentences as strings
     sentences = get_sentences_in_email(email)
+    if isinstance(sentences[0], ET.Element):
+        sentences = [s.text for s in sentences]
+
+    # Return relative position of sentence
     if sentence in sentences:
         return sentences.index(sentence) / float(len(sentences)) * 100
 
 def get_subject_similarity(subject, sentence):
-    '''Returns the similarity of a sentence and the subject. 
-       The sentence can be a XML tree element or a string.'''
+    '''Returns the similarity of a sentence and the subject.
+       The sentence and sentence can be a XML tree element or a string.'''
 
     # Change sentence to string
     if isinstance(sentence, ET.Element):
         sentence = sentence.text
+    if isinstance(subject, ET.Element):
+        subject = subject.text
 
     # Split into lists of words
     subject_words = clean_up_words(subject.split())
@@ -299,7 +311,7 @@ def get_annotated_scores():
 
     return score
 
-def vectorize_training_data():
+def vectorize_bc3_corpus():
     '''Vectorizes the entire BC3 corpus, returns a list of sentence feature vectors
        and a dictionary of {vector: vector/sentence metadata}.'''
 
@@ -330,15 +342,46 @@ def vectorize_training_data():
 
     print("Finished constructing vocab list")
 
+    ## Calculate and cache all tf_idf vectors, in {sentence: tf-idf vector}
+    # cached_tf_idf_vectors, cached_tf_local_idf_vectors = dict(), dict()
+    # for thread_index in range(len(root)):
+    #         # Get tf-idf vector for each sentence in this thread
+    #         thread = root[thread_index]
+    #         thread_sentences = get_sentences_in_thread(thread)
+    #         for sentence in thread_sentences:
+    #                 # Get the key for the sentence as thread_id-sentence_id
+    #                 thread_id = thread[1].text
+    #                 sentence_id = sentence.attrib['id']
+    #                 sentence_key = thread_id + '-' + sentence_id
+
+    #                 tf_idf_vector = get_tf_idf_vector(sentence, thread, root, word_counts_per_thread, vocab_list_index)
+    #                 cached_tf_idf_vectors[sentence_key] = tf_idf_vector
+    #                 tf_local_idf_vector = get_tf_local_idf_vector(sentence, thread, root, word_counts_per_thread, vocab_list_index)
+    #                 cached_tf_local_idf_vectors[sentence_key] = tf_local_idf_vector
+
+    #         print("Calculated tf-idf for thread %i" % thread_index)
+
+    # print("Finished pre-calculating tf-idf stuff")
+
+    ## Pickle the tf-idf dictionaries
+    # tf_idf_file = open("data/bc3_tf_idf_vectors", "wb")
+    # pickle.dump(cached_tf_idf_vectors, tf_idf_file, protocol=2)
+    # tf_idf_file.close()
+    # tf_local_idf_file = open("data/bc3_tf_local_idf_vectors", "wb")
+    # pickle.dump(cached_tf_local_idf_vectors, tf_local_idf_file, protocol=2)
+    # tf_local_idf_file.close()
+
+    # print("Successfully pickled")
+
     ## Load tf_idf vector from pickled cache {thread_id-sentence_id: tf_idf vector}
-    tf_idf_file = open("data/cached_tf_idf_vectors_all", "rb")
-    tf_local_idf_file = open("data/cached_tf_local_idf_vectors_all", "rb")
+    tf_idf_file = open("data/bc3_tf_idf_vectors", "rb")
+    tf_local_idf_file = open("data/bc3_tf_local_idf_vectors", "rb")
     cached_tf_idf_vectors = pickle.load(tf_idf_file)
     cached_tf_local_idf_vectors = pickle.load(tf_local_idf_file)
     tf_idf_file.close()
     tf_local_idf_file.close()
 
-    print("Loaded tf_idf vectors")
+    print("Loaded tf_idf vectors from pickle.")
 
     ## Calculate and cache all centroid vectors, in {thread: centroid_vector}
     cached_centroid_vectors, cached_local_centroid_vectors = dict(), dict()
@@ -402,7 +445,7 @@ def vectorize_sentence(sentence, index, email, subject, num_recipients,
             - sentence is either a XML tree element or a string of a sentence.
             - index is the number of the sentence in the email (zero-indexed).
             - email is the email the sentence is in.
-            - subject is the subject of the email.
+            - subject is the subject of the email, as a string or XML tree element.
             - num_recipients is the number of recipients.
             - context_sentences is all the sentences in either the thread or the email.
             - email_number is the number of the email within the thread.
@@ -442,7 +485,7 @@ def vectorize_sentence(sentence, index, email, subject, num_recipients,
     return sentence_vector
 
 def train_and_review_classifier():
-    sentence_vectors, sentence_vectors_metadata = vectorize_training_data()
+    sentence_vectors, sentence_vectors_metadata = vectorize_bc3_corpus()
     scores = get_annotated_scores()
 
     # Align these by index
@@ -477,11 +520,11 @@ def train_and_review_classifier():
 
     print(validation_errors)
 
-def server_train_classifier(aligned_sentence_vectors,aligned_scores):
+def server_train_classifier(aligned_sentence_vectors, aligned_scores):
     random_forest = ensemble.RandomForestRegressor()
-    random_forest.fit(aligned_sentence_vectors,aligned_scores)
+    random_forest.fit(aligned_sentence_vectors, aligned_scores)
 
     return random_forest
 
 if __name__ == '__main__':
-    pass
+    vectorize_bc3_corpus()
