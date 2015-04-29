@@ -44,13 +44,16 @@ def get_sentences_in_thread(thread):
 def get_sentences_in_email(email):
     '''If email is an xml tree element, returns a list of sentence objects.
        If email is a string, return a list of sentence strings.'''
+
     if isinstance(email, ET.Element):
+        # If email is an XML tree element
         text_tag = None
         for i in range(len(email)):
             if email[i].tag == 'Text':
                 text_tag = email[i]
         return list(text_tag)
     else:
+        # If email is a string
         sentences = re.split("[\.\?!]", email)
         sentences = [sentence.strip() for sentence in sentences if sentence != '']
         return sentences
@@ -65,6 +68,11 @@ def get_words_in_thread(thread):
     return words
 
 def get_words_in_email(email):
+    '''Takes in an email as an xml tree element OR string, and returns a list of words.
+       (Note: Always use this function to get words in an email, not email_text.split().
+       This first splits the email into sentences, and then words. This WILL split words
+       with .!? as the characters. This is needed for the vectorize_email.tf-idf function.)'''
+
     word_list = []
     sentences = get_sentences_in_email(email)
     for sentence in sentences:
@@ -72,7 +80,12 @@ def get_words_in_email(email):
     return word_list
 
 def get_words_in_sentence(sentence):
-    return sentence.text.split()
+    '''Takes in a sentence as an xml tree element OR string, and returns a list of word.'''
+
+    if isinstance(sentence, ET.Element):
+        return sentence.text.split()
+    else:
+        return sentence.split()
 
 def clean_up_words(word_list):
     '''Takes in list of words, returns list of lowercase, alphanumeric-only, singular words.'''
@@ -99,19 +112,25 @@ def get_num_recipients(email):
             num_recipients += email_tag.text.count('@')
     return num_recipients
 
-def get_relative_position_in_email(sentence, emails):
-    '''Returns the relative position of the sentence in a list of emails.
-        - sentence can be an xml tree element and an email can be a xml tree element.
-        - sentence can be a string and an email can be a string.'''
-    for email in emails:
-        sentences = get_sentences_in_email(email)
-        if sentence in sentences:
-            return sentences.index(sentence) / float(len(sentences)) * 100
+def get_relative_position_in_email(sentence, email):
+    '''Returns the relative position of the sentence in the email.
+        - sentence can be an XML tree element and email can be a XML tree element.
+        - sentence can be a string and an email can be a list of strings.'''
+    sentences = get_sentences_in_email(email)
+    if sentence in sentences:
+        return sentences.index(sentence) / float(len(sentences)) * 100
 
 def get_subject_similarity(subject, sentence):
+    '''Returns the similarity of a sentence and the subject. 
+       The sentence can be a XML tree element or a string.'''
+
+    # Change sentence to string
+    if isinstance(sentence, ET.Element):
+        sentence = sentence.text
+
     # Split into lists of words
-    subject_words = clean_up_words(subject.text.split())
-    sentence_words = clean_up_words(sentence.text.split())
+    subject_words = clean_up_words(subject.split())
+    sentence_words = clean_up_words(sentence.split())
 
     # Get # of words occurring in both
     overlap = len(set(subject_words).intersection(set(sentence_words)))
@@ -126,20 +145,20 @@ def get_tf_idf_vector(sentence, thread, root, word_counts_per_thread, vocab_list
     # Clean up words in the thread and the sentence
     threads = get_threads_in_root(root)
     thread_words = clean_up_words(get_words_in_thread(thread))
-    clean_sentence = clean_up_words(sentence.text.split())
+    sentence_words = clean_up_words(sentence.text.split())
 
-    # Calculate term-frequency, number of times word appears in thread
+    # Calculate term-frequency, number of times word appears in thread, normalized by len(thread)
     tf_vector = np.zeros(len(vocab_list_index))
-    for word in clean_sentence:
+    for word in sentence_words:
         occurrences = word_counts_per_thread[thread][word]
         tf = occurrences / float(len(thread_words))
         word_index = vocab_list_index[word]
         tf_vector[word_index] = tf
 
-    # Calculate inverse document frequency, on # of threads in entire corpus that have the word
+    # Calculate inverse document frequency, # of threads in entire corpus that have the word
     idf_vector = np.zeros(len(vocab_list_index))
     threads_words = [set(clean_up_words(get_words_in_thread(thread))) for thread in threads]
-    for word in clean_sentence:
+    for word in sentence_words:
         num_threads_with_word = 0.0
         for thread_words in threads_words:
             if word in thread_words: num_threads_with_word += 1
@@ -160,21 +179,21 @@ def get_tf_local_idf_vector(sentence, thread, root, word_counts_per_thread, voca
 
     # Clean up words in the thread and the sentence
     thread_words = clean_up_words(get_words_in_thread(thread))
-    clean_sentence = clean_up_words(sentence.text.split())
+    sentence_words = clean_up_words(sentence.text.split())
 
-    # Calculate term-frequency, number of times word appears in thread
+    # Calculate term-frequency, number of times word appears in thread, normalized by len(thread)
     tf_vector = np.zeros(len(vocab_list_index))
-    for word in clean_sentence:
+    for word in sentence_words:
         occurrences = word_counts_per_thread[thread][word]
         tf = occurrences / float(len(thread_words))
         word_index = vocab_list_index[word]
         tf_vector[word_index] = tf
 
-    # Calculate inverse document frequency, on # of emails in thread that have the word
+    # Calculate local inverse document frequency, # of emails in thread that have the word
     idf_vector = np.zeros(len(vocab_list_index))
     emails = get_emails_in_thread(thread)
     emails_words = [set(clean_up_words(get_words_in_email(email))) for email in emails]
-    for word in clean_sentence:
+    for word in sentence_words:
         num_emails_with_word = 0.0
         for email_words in emails_words:
             if word in email_words: num_emails_with_word += 1
@@ -289,6 +308,7 @@ def vectorize_training_data():
     root = tree.getroot()
 
     ## Get word occurrence counts for each thread
+    ## This is used when calculating tf in tf-idf
     word_counts_per_thread = dict()
     for thread in root:
         words = get_words_in_thread(thread)
@@ -358,15 +378,15 @@ def vectorize_training_data():
             current_email = get_email_of_sentence(sentence, emails)
             sentence_key = thread[1].text + '-' + sentence.attrib['id']
             num_recipients = get_num_recipients(current_email)
-            email_number = int(sentence.attrib['id'].split('.')[0])
+            email_number = emails.index(current_email) + 1
             tf_idf_vector = cached_tf_idf_vectors[sentence_key]
             tf_local_idf_vector = cached_tf_local_idf_vectors[sentence_key]
             centroid_vector = cached_centroid_vectors[thread]
             local_centroid_vector = cached_local_centroid_vectors[thread]
 
             # Vectorize the sentence and store it
-            sentence_vector = vectorize_sentence(sentence, i, emails, subject, 
-                              num_recipients, thread_sentences, email_number, 
+            sentence_vector = vectorize_sentence(sentence, i, current_email, subject,
+                              num_recipients, thread_sentences, email_number,
                               tf_idf_vector, tf_local_idf_vector,
                               centroid_vector, local_centroid_vector)
             sentence_vectors.append(sentence_vector)
@@ -374,17 +394,33 @@ def vectorize_training_data():
 
     return sentence_vectors, sentence_vectors_metadata
 
-def vectorize_sentence(sentence, index, all_emails, subject, num_recipients, 
-                       context_sentences, email_number, tf_idf_vector, 
+def vectorize_sentence(sentence, index, email, subject, num_recipients,
+                       context_sentences, email_number, tf_idf_vector,
                        tf_local_idf_vector, centroid_vector, local_centroid_vector):
-    '''Takes in a sentence and its metadata, and returns its feature vector.'''
+    '''Takes in a sentence and its metadata, and returns its feature vector.
+       Arguments:
+            - sentence is either a XML tree element or a string of a sentence.
+            - index is the number of the sentence in the email (zero-indexed).
+            - email is the email the sentence is in.
+            - subject is the subject of the email.
+            - num_recipients is the number of recipients.
+            - context_sentences is all the sentences in either the thread or the email.
+            - email_number is the number of the email within the thread.
+            - tf_idf_vector is the vector of tf-idf values for all the sentence words.
+            - tf_local_idf_vector is the vector of tf-local-idf values for all the sentence words.
+            - centroid_vector is the average tf-idf vector in the thread.
+            - local_centroid_vector is the average tf-local-idf vector in the thread.'''
+
+    # Convert sentence to string if necessary
+    if isinstance(sentence, ET.Element):
+        sentence = sentence.text
 
     # Calculate all the (R14) features
-    thread_line_number = index
+    thread_line_number = index + 1
     rel_position_in_thread = index / float(len(context_sentences)) * 100
-    length = len(sentence.text.split())
-    is_question = 1 if '?' in sentence.text else 0
-    rel_position_in_email = get_relative_position_in_email(sentence, all_emails)
+    length = len(get_words_in_sentence(sentence))
+    is_question = 1 if '?' in sentence else 0
+    rel_position_in_email = get_relative_position_in_email(sentence, email)
     subject_similarity = get_subject_similarity(subject, sentence)
 
     tf_idf_sum = sum(tf_idf_vector)
