@@ -242,3 +242,5 @@ bc3_score_dict = return_bc3_score_dict(root_corpus, num_word_each_sent, aligned_
 
 #ideal_summary is the ideal summary weighted across 3 annotators 
 ideal_summary = return_ideal_summary(anno_score_sent, num_word_each_sent)
+
+print num_sent_each_thread["066-15270802"]
