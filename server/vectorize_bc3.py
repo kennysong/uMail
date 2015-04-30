@@ -1,5 +1,3 @@
-#question: can get split vectorize_bc3 and get_annotated score into two .py files ?
-
 import numpy as np
 import xml.etree.ElementTree as ET
 import string
@@ -15,10 +13,14 @@ from external_modules import inflect
 from sklearn import ensemble
 from sklearn.externals import joblib
 
+import helpers
+
 def get_threads_in_root(root):
+    '''Takes the root of an ElementTree return a list of threads (ET.Element).'''
     return list(root)
 
 def get_emails_in_thread(thread):
+    '''Takes a thread (ET.Element) return a list of emails (ET.Element).'''
     emails = []
     for i in range(len(thread)):
         if thread[i].tag == 'DOC':
@@ -26,12 +28,16 @@ def get_emails_in_thread(thread):
     return emails
 
 def get_email_of_sentence(sentence, emails):
+    '''Given a list of emails (ET.Element), return the email (ET.Element) that
+       the sentence (ET.Element) is in.'''
     for email in emails:
         sentences = get_sentences_in_email(email)
         if sentence in sentences:
             return email
 
 def get_sentences_in_thread(thread):
+    '''Given a thread (ET.Element), return a list of all sentences (ET.Element)
+       in the thread.'''
     emails = get_emails_in_thread(thread)
     thread_sentences = []
     for email in emails:
@@ -42,11 +48,10 @@ def get_sentences_in_thread(thread):
     return thread_sentences
 
 def get_sentences_in_email(email):
-    '''If email is an xml tree element, returns a list of sentence objects.
+    '''If email is an ET.Element, returns a list of sentence objects.
        If email is a string, return a list of sentence strings.'''
-
     if isinstance(email, ET.Element):
-        # If email is an XML tree element
+        # If email is an ET.Element
         text_tag = None
         for i in range(len(email)):
             if email[i].tag == 'Text':
@@ -59,20 +64,18 @@ def get_sentences_in_email(email):
         return sentences
 
 def get_words_in_thread(thread):
+    '''Returns a list of all the words in a thread (ET.Element).'''
     words = []
     emails = get_emails_in_thread(thread)
     for email in emails:
-        sentences = get_sentences_in_email(email)
-        for sentence in sentences:
-            words += get_words_in_sentence(sentence)
+        words = get_words_in_email(email)
     return words
 
 def get_words_in_email(email):
-    '''Takes in an email as an xml tree element OR string, and returns a list of words.
+    '''Given an email as an ET.Element OR string, return a list of words.
        (Note: Always use this function to get words in an email, not email_text.split().
        This first splits the email into sentences, and then words. This WILL split words
        with .!? as the characters. This is needed for the vectorize_email.tf-idf function.)'''
-
     word_list = []
     sentences = get_sentences_in_email(email)
     for sentence in sentences:
@@ -80,15 +83,15 @@ def get_words_in_email(email):
     return word_list
 
 def get_words_in_sentence(sentence):
-    '''Takes in a sentence as an xml tree element OR string, and returns a list of word.'''
-
+    '''Given a sentence as an ET.Element OR string, return a list of words.'''
     if isinstance(sentence, ET.Element):
         return sentence.text.split()
     else:
         return sentence.split()
 
 def clean_up_words(word_list):
-    '''Takes in list of words, returns list of lowercase, alphanumeric-only, singular words.'''
+    '''Given list of words, returns list of lowercase, alphanumeric-only, singular words.'''
+
     # Make lowercase
     clean_word_list = [word.lower() for word in word_list]
 
@@ -105,6 +108,7 @@ def clean_up_words(word_list):
     return clean_word_list
 
 def get_num_recipients(email):
+    '''Returns the number of recipients in an email (ET.Element).'''
     num_recipients = 0
     for email_tag in email:
         if email_tag.tag == 'To' or email_tag.tag == 'Cc':
@@ -112,12 +116,12 @@ def get_num_recipients(email):
             num_recipients += email_tag.text.count('@')
     return num_recipients
 
-def get_relative_position_in_email(sentence, email):
-    '''Returns the # of sentences before divided by total in the email.
-        - sentence can be an XML tree element and email can be a XML tree element.
+def get_rel_pos_in_email(sentence, email):
+    '''Returns the # of sentences before sentence divided by total # in the email.
+        - sentence can be an ET.Element and email can be a ET.Element.
         - sentence can be a string and an email can be a list of strings.'''
 
-    # If sentence is an XML tree element, convert to string
+    # If sentence is an ET.Element, convert to string
     if isinstance(sentence, ET.Element):
         sentence = sentence.text
 
@@ -131,8 +135,8 @@ def get_relative_position_in_email(sentence, email):
         return sentences.index(sentence) / float(len(sentences)) * 100
 
 def get_subject_similarity(subject, sentence):
-    '''Returns the similarity of a sentence and the subject.
-       The sentence and sentence can be a XML tree element or a string.'''
+    '''Returns the # words similarity of a sentence and the subject.
+       The sentence and sentence can be a ET.Element or a string.'''
 
     # Change sentence to string
     if isinstance(sentence, ET.Element):
@@ -149,10 +153,10 @@ def get_subject_similarity(subject, sentence):
     return overlap
 
 def get_tf_idf_vector(sentence, thread, root, word_counts_per_thread, vocab_list_index):
-    '''Takes in a sentence and metadata, and returns a tf-idf vector of the sentence words.
-       idf = # of threads in entire corpus that have the word.
-       vocab_list_index = {word: index} for all the word in the corpus.
-       The tf-idf vectors have length(vocab_list_index) since the centroid is the avg vector.'''
+    '''Given a sentence and metadata, return a tf-idf vector of the sentence words.
+        - idf = # of threads in entire corpus that have the word.
+        - vocab_list_index = {word: index} for all the word in the corpus.
+        - The tf-idf vectors have length(vocab_list_index) since the centroid is the avg vector.'''
 
     # Clean up words in the thread and the sentence
     threads = get_threads_in_root(root)
@@ -184,7 +188,7 @@ def get_tf_idf_vector(sentence, thread, root, word_counts_per_thread, vocab_list
     return tf_idf_vector
 
 def get_tf_local_idf_vector(sentence, thread, root, word_counts_per_thread, vocab_list_index):
-    '''Takes in a sentence and metadata, and returns a tf-local-idf vector of the sentence words.
+    '''Given a sentence and metadata, return a tf-local-idf vector of the sentence words.
        idf = # of emails that have the word.
        vocab_list_index = {word: index} for all the word in the corpus.
        The tf-local-idf vectors have length(vocab_list_index) since the centroid is the avg vector.'''
@@ -232,13 +236,13 @@ def get_sentences_from_annotations(annotation):
             sentences.append(annotation[i])
     return sentences
 
-def get_sentenceID_from_sentences(sentence): #in string form
+def get_sentenceID_from_sentences(sentence):
     sentenceID = []
     for item in sentence:
         sentenceID.append(item.attrib["id"])
     return sentenceID
 
-def get_sentenceID_from_thread(thread): #in string form
+def get_sentenceID_from_thread(thread):
     sentenceID = []
     annotations = get_annotation_from_thread(thread)
     sentences = []
@@ -257,12 +261,10 @@ def normalize_score(score):
     tree_corpus = ET.parse("bc3_corpus/bc3corpus.1.0/corpus.xml")
     root_corpus = tree_corpus.getroot()
 
-    corpus_sentence = dict() #a dictionary, each each is a dictionary of keys,values being sentence ID and sentence string respectivelsenten
-
+    corpus_sentence = dict()
     for thread in root_corpus:
         sentence_id = dict()
         sentences = get_sentences_in_thread(thread)
-
         for sentence in sentences:
             sentence_id[sentence.attrib['id']] = sentence.text
 
@@ -272,7 +274,6 @@ def normalize_score(score):
 
     for thread in threadID_in_corpus:
         sentenceID_in_thread = score[thread].keys()
-
         for sentence in sentenceID_in_thread:
             score[thread][sentence] = float(score[thread][sentence])/len(corpus_sentence[thread][sentence].split() )
 
@@ -285,13 +286,12 @@ def get_annotated_scores():
     tree_corpus = ET.parse("bc3_corpus/bc3corpus.1.0/corpus.xml")
     root_corpus = tree_corpus.getroot()
 
-    #Creating a dictionary of thread number, each of which is another dictionary of the ID of each sentences in a thread
+    # Dictionary of thread number, each of which is another dictionary of the ID of each sentences in a thread
     corpus = dict()
 
     for thread in root_corpus:
         sentence_id = dict()
         sentences = get_sentences_in_thread(thread)
-
         for sentence in sentences:
             sentence_id[sentence.attrib['id']] = 0
 
@@ -300,10 +300,9 @@ def get_annotated_scores():
     score = copy.deepcopy(corpus)
 
     for thread in root_annotation:
-        sentenceID = get_sentenceID_from_thread(thread) #Getting all the sentences in the 3 summaries in annotation file
-
+        # Getting all the sentences in the 3 summaries in annotation file
+        sentenceID = get_sentenceID_from_thread(thread)
         sentenceID_in_thread = score[thread[0].text].keys()
-
         for sentence in sentenceID_in_thread:
             score[thread[0].text][sentence] = sentenceID.count(sentence)
 
@@ -315,12 +314,12 @@ def vectorize_bc3_corpus():
     '''Vectorizes the entire BC3 corpus, returns a list of sentence feature vectors
        and a dictionary of {vector: vector/sentence metadata}.'''
 
-    ## Set up XML tree
+    # Set up XML tree
     tree = ET.parse('bc3_corpus/bc3corpus.1.0/corpus.xml')
     root = tree.getroot()
 
-    ## Get word occurrence counts for each thread
-    ## This is used when calculating tf in tf-idf
+    # Get word occurrence counts for each thread
+    # This is used when calculating tf in tf-idf
     word_counts_per_thread = dict()
     for thread in root:
         words = get_words_in_thread(thread)
@@ -329,8 +328,8 @@ def vectorize_bc3_corpus():
 
     print("Finished getting word counts for each thread")
 
-    ## Calculate vocab list for entire corpus
-    ## This is needed for the tf-idf vectors, see function for more details
+    # Calculate vocab list for entire corpus
+    # This is needed for the tf-idf vectors, see function for more details
     vocab_list, vocab_list_set = [], set()
     for thread in root:
         thread_vocab_list = clean_up_words(get_words_in_thread(thread))
@@ -340,9 +339,12 @@ def vectorize_bc3_corpus():
                 vocab_list_set.add(item)
     vocab_list_index = {word: index for index, word in enumerate(vocab_list)}
 
+    # Save latest word list to bc3_vocab_data.py
+    helpers.write_bc3_vocab_data(vocab_list, vocab_list_index)
+
     print("Finished constructing vocab list")
 
-    ## Calculate and cache all tf_idf vectors, in {sentence: tf-idf vector}
+    # Calculate and cache all tf_idf vectors, in {sentence: tf-idf vector}
     # cached_tf_idf_vectors, cached_tf_local_idf_vectors = dict(), dict()
     # for thread_index in range(len(root)):
     #         # Get tf-idf vector for each sentence in this thread
@@ -363,7 +365,7 @@ def vectorize_bc3_corpus():
 
     # print("Finished pre-calculating tf-idf stuff")
 
-    ## Pickle the tf-idf dictionaries
+    # Pickle the tf-idf dictionaries
     # tf_idf_file = open("data/bc3_tf_idf_vectors", "wb")
     # pickle.dump(cached_tf_idf_vectors, tf_idf_file, protocol=2)
     # tf_idf_file.close()
@@ -373,7 +375,7 @@ def vectorize_bc3_corpus():
 
     # print("Successfully pickled")
 
-    ## Load tf_idf vector from pickled cache {thread_id-sentence_id: tf_idf vector}
+    # Load tf_idf vector from pickled cache {thread_id-sentence_id: tf_idf vector}
     tf_idf_file = open("data/bc3_tf_idf_vectors", "rb")
     tf_local_idf_file = open("data/bc3_tf_local_idf_vectors", "rb")
     cached_tf_idf_vectors = pickle.load(tf_idf_file)
@@ -383,7 +385,7 @@ def vectorize_bc3_corpus():
 
     print("Loaded tf_idf vectors from pickle.")
 
-    ## Calculate and cache all centroid vectors, in {thread: centroid_vector}
+    # Calculate and cache all centroid vectors, in {thread: centroid_vector}
     cached_centroid_vectors, cached_local_centroid_vectors = dict(), dict()
 
     for thread in root:
@@ -404,7 +406,7 @@ def vectorize_bc3_corpus():
 
     print("Finished calculating centroid vectors")
 
-    ## Traverse the XML tree, vectorizing each sentence as we encounter it
+    # Traverse the XML tree, vectorizing each sentence as we encounter it
     sentence_vectors = [] # [np.array, ...]
     sentence_vectors_metadata = [] # [(np.array, {metadata}), ...]
     for thread in root:
@@ -440,12 +442,12 @@ def vectorize_bc3_corpus():
 def vectorize_sentence(sentence, index, email, subject, num_recipients,
                        context_sentences, email_number, tf_idf_vector,
                        tf_local_idf_vector, centroid_vector, local_centroid_vector):
-    '''Takes in a sentence and its metadata, and returns its feature vector.
+    '''Given a sentence and its metadata, return its feature vector.
        Arguments:
-            - sentence is either a XML tree element or a string of a sentence.
+            - sentence is either a ET.Element or a string of a sentence.
             - index is the number of the sentence in the email (zero-indexed).
             - email is the email the sentence is in.
-            - subject is the subject of the email, as a string or XML tree element.
+            - subject is the subject of the email, as a string or ET.Element.
             - num_recipients is the number of recipients.
             - context_sentences is all the sentences in either the thread or the email.
             - email_number is the number of the email within the thread.
@@ -463,7 +465,7 @@ def vectorize_sentence(sentence, index, email, subject, num_recipients,
     rel_position_in_thread = index / float(len(context_sentences)) * 100
     length = len(get_words_in_sentence(sentence))
     is_question = 1 if '?' in sentence else 0
-    rel_position_in_email = get_relative_position_in_email(sentence, email)
+    rel_position_in_email = get_rel_pos_in_email(sentence, email)
     subject_similarity = get_subject_similarity(subject, sentence)
 
     tf_idf_sum = sum(tf_idf_vector)
@@ -484,7 +486,8 @@ def vectorize_sentence(sentence, index, email, subject, num_recipients,
 
     return sentence_vector
 
-def train_and_review_classifier():
+def get_bc3_vectors_and_scores():
+    '''Returns a list of vectors and scores that are aligned.'''
     sentence_vectors, sentence_vectors_metadata = vectorize_bc3_corpus()
     scores = get_annotated_scores()
 
@@ -500,31 +503,16 @@ def train_and_review_classifier():
         aligned_sentence_vectors.append(sentence_vector)
         aligned_scores.append(score)
 
-    # Split into training, validation sets
-    training_vectors = aligned_sentence_vectors[:3000]
-    training_scores = aligned_scores[:3000]
-    validation_vectors = aligned_sentence_vectors[3000:]
-    validation_scores = aligned_scores[3000:]
+    return aligned_sentence_vectors, aligned_scores
 
-    # Run random forest
-    random_forest = ensemble.RandomForestRegressor()
-    random_forest.fit(training_vectors, training_scores)
-
-    # Validation error measure
-    validation_errors = []
-    for i in range(len(validation_vectors)):
-        validation_vector = validation_vectors[i]
-        validation_score = validation_scores[i]
-        predicted_score = random_forest.predict(validation_vector)
-        validation_errors.append(abs(predicted_score - validation_score))
-
-    print(validation_errors)
-
-def server_train_classifier(aligned_sentence_vectors, aligned_scores):
+def train_full_classifier(aligned_sentence_vectors, aligned_scores):
+    '''Trains a classifier on the entire BC3 corpus, returns RandomForest object.'''
     random_forest = ensemble.RandomForestRegressor()
     random_forest.fit(aligned_sentence_vectors, aligned_scores)
 
     return random_forest
 
 if __name__ == '__main__':
-    vectorize_bc3_corpus()
+    # Vectorize the BC3 corpus, and write to vectorized_bc3_data.py
+    sentence_vectors, scores = get_bc3_vectors_and_scores()
+    helpers.write_vectorized_bc3_data(sentence_vectors, scores)
