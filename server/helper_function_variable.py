@@ -212,7 +212,6 @@ def return_ideal_summary(anno_score_sent, num_word_each_sent):
     ideal_summary = dict()
 
     for thread_listno in anno_score_sent:
-        ideal_summary[thread_listno] = {}
         ideal_summary[thread_listno] = ideal_summary_thread(thread_listno, anno_score_sent, num_word_each_sent)
 
     return ideal_summary
