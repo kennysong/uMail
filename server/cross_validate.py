@@ -84,7 +84,7 @@ if __name__ == '__main__':
 	#get all thread listno in bc3 
 	thread_listno_in_bc3 = [thread_listno_of_current_thread(thread) for thread in root]
 
-	#create validation set and training set
+	#Run cross_validation 
 	for i in range(1,40,4):
 		training_set_thread_listno, validation_set_thread_listno = validation_and_training_set_thread_listno(i)
 
