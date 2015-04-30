@@ -6,54 +6,61 @@ import copy
 from helper_function_variable import *
 
 def vect_sent_thread(bc3_vector_dict, thread_listno):
-	vector = [bc3_vector_dict[thread_listno][sent_ID] for sent_ID in bc3_vector_dict[thread_listno].keys()]
+    #Return the vectors of the sentences  of the <thread> that has thread_listno
 
-	return vector
+    vector = [bc3_vector_dict[thread_listno][sent_ID] for sent_ID in bc3_vector_dict[thread_listno].keys()]
+
+    return vector
 
 def score_sent_thread(bc3_score_dict, thread_listno):
-	score = [bc3_score_dict[thread_listno][sent_ID] for sent_ID in bc3_score_dict[thread_listno].keys()]
+    #Return the scores of the sentences of the <thread> that has thread_listno
 
-	return score
+    score = [bc3_score_dict[thread_listno][sent_ID] for sent_ID in bc3_score_dict[thread_listno].keys()]
+
+    return score
 
 def validation_and_training_set_thread_listno(validation_first_thread_position, thread_listno_bc3):
-	#validation_first_thread_position is the position of the first thread of the validation set in the original collections of thread
-	validation_set_thread_listno = [thread_listno for thread_listno in thread_listno_bc3[validation_first_thread_position-1:validation_first_thread_position+4]]
+    #return the thread_listno of the threads in training set and validation set
+    #validation_first_thread_position is the position in the original collections of thread of the first thread of the validation set 
 
-	training_set_thread_listno = [thread_listno for thread_listno in  thread_listno_bc3 if thread_listno not in validation_set_thread_listno]
+    validation_set_thread_listno = [thread_listno for thread_listno in thread_listno_bc3[validation_first_thread_position-1:validation_first_thread_position+4]]
 
-	return training_set_thread_listno, validation_set_thread_listno
+    training_set_thread_listno = [thread_listno for thread_listno in  thread_listno_bc3 if thread_listno not in validation_set_thread_listno]
+
+    return training_set_thread_listno, validation_set_thread_listno
 
 def create_validation_and_training_set(bc3_vector_dict, bc3_score_dict, training_set_thread_listno, validation_set_thread_listno):
+    #Return training, validation set, scores from the thread_listno of the threads in training set and validation set
 
-	validation_set_vector = []
-	validation_set_score  = []
-	training_set_vector = []
-	training_set_score = []
+    validation_set_vector = []
+    validation_set_score  = []
+    training_set_vector = []
+    training_set_score = []
 
-	for thread_listno in validation_set_thread_listno:
-		validation_set_vector += vect_sent_thread(bc3_vector_dict, thread_listno)
-		validation_set_score  += score_sent_thread(bc3_score_dict, thread_listno)
+    for thread_listno in validation_set_thread_listno:
+    	validation_set_vector += vect_sent_thread(bc3_vector_dict, thread_listno)
+    	validation_set_score  += score_sent_thread(bc3_score_dict, thread_listno)
 
-	for thread_listno in training_set_thread_listno:
-		training_set_vector += vect_sent_thread(bc3_vector_dict, thread_listno)
-		training_set_score  += score_sent_thread(bc3_score_dict, thread_listno)
+    for thread_listno in training_set_thread_listno:
+    	training_set_vector += vect_sent_thread(bc3_vector_dict, thread_listno)
+    	training_set_score  += score_sent_thread(bc3_score_dict, thread_listno)
 
-	return training_set_vector, training_set_score, validation_set_vector, validation_set_score
+    return training_set_vector, training_set_score, validation_set_vector, validation_set_score
 
 def validation(training_set_vector, training_set_score, validation_set_vector, validation_set_score):
-	#Train classifier on traing_set_vector
-	#Predict score for each sentence in validation_set_vector
-	random_forest = vectorize_bc3.server_train_classifier(training_set_vector, training_set_score)
+    #Train classifier on traing_set_vector
+    #Predict score for each sentence in validation_set_vector
+    random_forest = vectorize_bc3.server_train_classifier(training_set_vector, training_set_score)
 
-	validation_set_predicted_score = [] 
+    validation_set_predicted_score = [] 
 
-	for sentence in validation_set_vector:
-		validation_set_predicted_score.append(float(random_forest.predict(sentence)))
+    for sentence in validation_set_vector:
+    	validation_set_predicted_score.append(float(random_forest.predict(sentence)))
 
-	return validation_set_predicted_score
+    return validation_set_predicted_score
 
 def update_predicted_score_each_sent(predicted_score_each_sent, validation_set_predicted_score, validation_set_thread_listno): 
-    #Update predicted_score_each_sent with validation_set_predicted_score 
+    #Update predicted_score_each_sent with validation_set_predicted_score  after every validation run
 
     for thread_listno in validation_set_thread_listno:
         sentence_count = 0
@@ -63,13 +70,16 @@ def update_predicted_score_each_sent(predicted_score_each_sent, validation_set_p
             if sentence_count == num_sent_each_thread[thread_listno]: break
 
 def cross_validate(root_corpus, bc3_vector_dict, bc3_score_dict):
+    #perform 10 fold cross validation
 
     #predicted_score_each_sent contains the predicted score of each sentence after 10 fold cross validation
+    #copying the structure of bc3_vector_dict
     predicted_score_each_sent = copy.deepcopy(bc3_vector_dict)
 
     #get all thread listno in bc3 
     thread_listno_bc3 = [thread_listno_of_current_thread(thread) for thread in root_corpus]
 
+    #run cross-validation woohoo
     for i in range(1,40,4):
         training_set_thread_listno, validation_set_thread_listno = validation_and_training_set_thread_listno(i, thread_listno_bc3)
 
@@ -88,13 +98,15 @@ root_corpus  = tree.getroot()
 
 predicted_score_each_sent = cross_validate(root_corpus, bc3_vector_dict, bc3_score_dict)
 
-test = []
-test2 = []
-for i in range(10):
-    predicted_score_each_sent = cross_validate(root_corpus, bc3_vector_dict, bc3_score_dict)
+#see the variance in predicted score for each sentence by uncomment and run the section below
+# test = []
+# test2 = []
+# for i in range(20):
+#     predicted_score_each_sent = cross_validate(root_corpus, bc3_vector_dict, bc3_score_dict)
 
-    test.append(predicted_score_each_sent["066-15270802"]["1.4"])
-    test2.append(predicted_score_each_sent["066-15270802"]["1.3"])
+#     test.append(predicted_score_each_sent["066-15270802"]["1.4"])
+#     test2.append(predicted_score_each_sent["066-15270802"]["1.3"])
 
-print test
-print test2
+# print test
+# print 
+# print test2
