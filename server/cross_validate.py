@@ -3,26 +3,27 @@
 import xml.etree.ElementTree as ET
 import vectorize_bc3
 import copy
-from handy_function import *
+from helper_function_variable import *
 
-def vector_of_sentence_of_thread_from_bc3_vector_dict(thread_listno):
-	vector = [bc3_vector_dict[thread_listno][sentence_ID] for sentence_ID in bc3_vector_dict[thread_listno].keys()]
+def vect_sent_thread(bc3_vector_dict, thread_listno):
+	vector = [bc3_vector_dict[thread_listno][sent_ID] for sent_ID in bc3_vector_dict[thread_listno].keys()]
 
 	return vector
 
-def score_of_sentence_of_thread_from_bc3_score_dict(thread_listno):
-	score = [bc3_score_dict[thread_listno][sentence_ID] for sentence_ID in bc3_vector_dict[thread_listno].keys()]
+def score_sent_thread(bc3_score_dict, thread_listno):
+	score = [bc3_score_dict[thread_listno][sent_ID] for sent_ID in bc3_score_dict[thread_listno].keys()]
 
 	return score
 
 def validation_and_training_set_thread_listno(validation_first_thread_position):
-	validation_set_thread_listno = [thread_listno for thread_listno in thread_listno_in_bc3[validation_first_thread_position-1:validation_first_thread_position+4]]
+	#validation_first_thread_position is the position of the first thread of the validation set in the original collections of thread
+	validation_set_thread_listno = [thread_listno for thread_listno in thread_listno_bc3[validation_first_thread_position-1:validation_first_thread_position+4]]
 
-	training_set_thread_listno = [thread_listno for thread_listno in  thread_listno_in_bc3 if thread_listno not in validation_set_thread_listno]
+	training_set_thread_listno = [thread_listno for thread_listno in  thread_listno_bc3 if thread_listno not in validation_set_thread_listno]
 
 	return training_set_thread_listno, validation_set_thread_listno
 
-def create_validation_and_training_set(training_set_thread_listno, validation_set_thread_listno):
+def create_validation_and_training_set(bc3_vector_dict, bc3_score_dict, training_set_thread_listno, validation_set_thread_listno):
 
 	validation_set_vector = []
 	validation_set_score  = []
@@ -30,23 +31,23 @@ def create_validation_and_training_set(training_set_thread_listno, validation_se
 	training_set_score = []
 
 	for thread_listno in validation_set_thread_listno:
-		validation_set_vector += vector_of_sentence_of_thread_from_bc3_vector_dict(thread_listno)
-		validation_set_score  += score_of_sentence_of_thread_from_bc3_score_dict(thread_listno)
+		validation_set_vector += vect_sent_thread(bc3_vector_dict, thread_listno)
+		validation_set_score  += score_sent_thread(bc3_score_dict, thread_listno)
 
 	for thread_listno in training_set_thread_listno:
-		training_set_vector += vector_of_sentence_of_thread_from_bc3_vector_dict(thread_listno)
-		training_set_score  += score_of_sentence_of_thread_from_bc3_score_dict(thread_listno)
+		training_set_vector += vect_sent_thread(bc3_vector_dict, thread_listno)
+		training_set_score  += score_sent_thread(bc3_score_dict, thread_listno)
 
 	return training_set_vector, training_set_score, validation_set_vector, validation_set_score
 
-def update_predicted_score_each_sentence_with_validation_set_predicted_score(predicted_score_each_sentence, validation_set_predicted_score, validation_set_thread_listno): 
-
+def update_predicted_score_each_sent(predicted_score_each_sent, validation_set_predicted_score, validation_set_thread_listno): 
+	#Update predicted_score_each_sent with validation_set_predicted_score 
 	for thread_listno in validation_set_thread_listno:
 		sentence_count = 0
-		for sentence_ID in predicted_score_each_sentence[thread_listno].keys():
-			predicted_score_each_sentence[thread_listno][sentence_ID] = validation_set_predicted_score[sentence_count]
+		for sent_ID in predicted_score_each_sent[thread_listno].keys():
+			predicted_score_each_sent[thread_listno][sent_ID] = validation_set_predicted_score[sentence_count]
 			sentence_count += 1
-			if sentence_count == num_sentence_in_each_thread[thread_listno]: break
+			if sentence_count == num_sent_each_thread[thread_listno]: break
 
 def validation(training_set_vector, training_set_score, validation_set_vector, validation_set_score):
 	#Train classifier on traing_set_vector
@@ -61,38 +62,26 @@ def validation(training_set_vector, training_set_score, validation_set_vector, v
 	return validation_set_predicted_score
 
 if __name__ == '__main__':
-
-	#Load necessary data 
-	f = open("data/bc3_vector_dict.pck", "r")
-	bc3_vector_dict = pickle.load(f)
-	f.close()
-
-	f = open("data/bc3_score_dict.pck", "r")
-	bc3_score_dict = pickle.load(f)
-	f.close()
-
-	f = open("data/num_sentence_in_each_thread.pck", "r")
-	num_sentence_in_each_thread = pickle.load(f)
-	f.close()
-
 	tree  = ET.parse("bc3_corpus/bc3corpus.1.0/corpus.xml")
-	root  = tree.getroot() 
-	#Finish loading
+	root_corpus  = tree.getroot() 
 
-	predicted_score_each_sentence = copy.deepcopy(bc3_vector_dict)
+	#predicted_score_each_sent contains the predicted score of each sentence after 10 fold cross validation
+	predicted_score_each_sent = copy.deepcopy(bc3_vector_dict)
 
 	#get all thread listno in bc3 
-	thread_listno_in_bc3 = [thread_listno_of_current_thread(thread) for thread in root]
+	thread_listno_bc3 = [thread_listno_of_current_thread(thread) for thread in root_corpus]
 
-	#Run cross_validation 
+	#create validation set and training set
 	for i in range(1,40,4):
 		training_set_thread_listno, validation_set_thread_listno = validation_and_training_set_thread_listno(i)
 
-		training_set_vector, training_set_score, validation_set_vector, validation_set_score = create_validation_and_training_set(training_set_thread_listno, validation_set_thread_listno)
+		training_set_vector, training_set_score, validation_set_vector, validation_set_score = create_validation_and_training_set(bc3_vector_dict, bc3_score_dict, training_set_thread_listno, validation_set_thread_listno)
 
+		#validation_set_predicted_score is the predicted score of the sentence in the validation set
 		validation_set_predicted_score = validation(training_set_vector, training_set_score, validation_set_vector, validation_set_score)
 
-		update_predicted_score_each_sentence_with_validation_set_predicted_score(predicted_score_each_sentence, validation_set_predicted_score, validation_set_thread_listno)
+		#update_predicted_score_each_sent updates the predicted_score_each_sent with the predicted score of the sentence in a validation set
+		update_predicted_score_each_sent(predicted_score_each_sent, validation_set_predicted_score, validation_set_thread_listno)
 
-	print predicted_score_each_sentence
+	print predicted_score_each_sent
 
