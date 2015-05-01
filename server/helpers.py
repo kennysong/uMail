@@ -104,6 +104,7 @@ def anno_sent_ID_in_thread(thread):
     return anno_sent_in_thread
 
 def return_num_word_each_sent(root_corpus):
+    "Return number of word in each sentence in corpus in dictionary form"
     num_word_each_sent = dict()
 
     for thread in root_corpus:
@@ -113,6 +114,7 @@ def return_num_word_each_sent(root_corpus):
     return num_word_each_sent
 
 def return_anno_score_sent(root_annotation, num_word_each_sent):
+    "Return the annotation score of each sentence in corpus (normalized)"
     anno_score_sent = dict()
 
     for thread in root_annotation:
@@ -126,14 +128,17 @@ def return_anno_score_sent(root_annotation, num_word_each_sent):
     return anno_score_sent
 
 def num_sent_in_text(text):
+    "return the number of sentence in a <text>"
     return len(text)
 
 def num_sent_in_doc(doc):
+    "return the number of sentence in a <DOC>"
     for text in doc:
         if text.tag == "Text":
             return num_sent_in_text(text)
 
 def num_sent_in_thread(thread):
+    "Return the number of sentence in a <thread>"
     num_sent = 0
     for doc in thread:
         if doc.tag == "DOC": num_sent += num_sent_in_doc(doc)
@@ -141,6 +146,7 @@ def num_sent_in_thread(thread):
     return num_sent
 
 def return_num_sent_each_thread(root_corpus):
+    "return the number of sentence in corpus in dictionary form"
     num_sent_each_thread = dict()
 
     for thread in root_corpus:
@@ -150,7 +156,9 @@ def return_num_sent_each_thread(root_corpus):
     return num_sent_each_thread
 
 def return_bc3_vector_dict(root_corpus, num_word_each_sent, sentence_vectors):
-    # Copy the structure of length_each_sentence
+    "return the vectorized sentence in bc3 in dictionary form"
+
+    # Copy the structure of num_word_each_sent
     bc3_vector_dict = copy.deepcopy(num_word_each_sent)
 
     current_sentence = 0
@@ -164,7 +172,10 @@ def return_bc3_vector_dict(root_corpus, num_word_each_sent, sentence_vectors):
     return bc3_vector_dict
 
 def return_bc3_score_dict(root_corpus, num_word_each_sent, scores):
-    # Copy the structure of length_each_sentence
+    "Return the score of the vectorized sentence in bc3 in dictionary form"
+
+    # Qns to clarify: where did we get these scores from ? 
+    # Copy the structure of num_word_each_sent
     bc3_score_dict = copy.deepcopy(num_word_each_sent)
 
     current_sentence = 0
@@ -204,6 +215,7 @@ def ideal_summary_thread(thread_listno, anno_score_sent, num_word_each_sent):
     return ideal_summary
 
 def return_ideal_summary(anno_score_sent, num_word_each_sent):
+    "Return the ideal summary from the annotaion score for each <thread> in dictionary form "
     ideal_summary = dict()
     for thread_listno in anno_score_sent:
         ideal_summary[thread_listno] = ideal_summary_thread(thread_listno, anno_score_sent, num_word_each_sent)
@@ -212,6 +224,7 @@ def return_ideal_summary(anno_score_sent, num_word_each_sent):
 # if __name__ == '__main__':
 
 # This is bad code! Should not depend on calling functions down here that get accessed by cross_validate.py. Better to just evaluate the variables in cross_validate.py.
+# why is it bad ?
 tree = ET.parse("bc3_corpus/bc3corpus.1.0/annotation.xml")
 root_annotation = tree.getroot()
 
