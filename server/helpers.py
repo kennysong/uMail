@@ -221,28 +221,61 @@ def return_ideal_summaries(anno_score_sent, num_word_each_sent):
         ideal_summaries[thread_listno] = get_thread_summary(thread_listno, anno_score_sent, num_word_each_sent)
     return ideal_summaries
 
-# if __name__ == '__main__':
+def clear_helper_variables():
+    "delete everything in the file data/helper_variables.py"
 
+<<<<<<< HEAD
+    f = open("data/helper_variables.py", "w")
+=======
 tree = ET.parse("bc3_corpus/bc3corpus.1.0/annotation.xml")
 root_annotation = tree.getroot()
+>>>>>>> a4705e62d56b56f25b75f32eb98ef7ea5a4665fd
 
-tree = ET.parse("bc3_corpus/bc3corpus.1.0/corpus.xml")
-root_corpus = tree.getroot()
+    f.close
 
-# num_word_each_sent is the number of words in each sentence
-num_word_each_sent = return_num_word_each_sent(root_corpus)
+def save_variable(variable, variable_name = str):
+    "Save the variable into data/helper_variables"
 
-# anno_score_sent is the normalized annotation score for each sentence
-anno_score_sent = return_anno_score_sent(root_annotation, num_word_each_sent)
+    f = open("data/helper_variables.py", "a")
 
-# num_sent_each_thread is the number of sentence in each thread
-num_sent_each_thread = return_num_sent_each_thread(root_corpus)
+    f. write(variable_name + " = " + repr(variable) + "\n" +"\n")
 
-# bc3_vector_dict is the bc3_vectorized vectors in dictionary format
-bc3_vector_dict = return_bc3_vector_dict(root_corpus, num_word_each_sent, sentence_vectors)
+    f.close()
 
-# bc3_score_dict is the bc_3vectorized scores in dictionary format
-bc3_score_dict = return_bc3_score_dict(root_corpus, num_word_each_sent, scores)
+if __name__ == '__main__':
+    tree = ET.parse("bc3_corpus/bc3corpus.1.0/annotation.xml")
+    root_annotation = tree.getroot()
 
+    tree = ET.parse("bc3_corpus/bc3corpus.1.0/corpus.xml")
+    root_corpus = tree.getroot()
+
+    clear_helper_variables()
+
+    # num_word_each_sent is the number of words in each sentence
+    num_word_each_sent = return_num_word_each_sent(root_corpus)
+    save_variable(num_word_each_sent, "num_word_each_sent")
+
+    # anno_score_sent is the normalized annotation score for each sentence
+    anno_score_sent = return_anno_score_sent(root_annotation, num_word_each_sent)
+    save_variable(anno_score_sent, "anno_score_sent")
+
+    # num_sent_each_thread is the number of sentence in each thread
+    num_sent_each_thread = return_num_sent_each_thread(root_corpus)
+    save_variable(num_sent_each_thread, "num_sent_each_thread")
+
+    # bc3_vector_dict is the bc3_vectorized vectors in dictionary format
+    bc3_vector_dict = return_bc3_vector_dict(root_corpus, num_word_each_sent, sentence_vectors)
+    save_variable(bc3_vector_dict, "bc3_vector_dict")
+
+<<<<<<< HEAD
+    # bc3_score_dict is the bc_3vectorized scores in dictionary format
+    bc3_score_dict = return_bc3_score_dict(root_corpus, num_word_each_sent, scores)
+    save_variable(bc3_score_dict, "bc3_score_dict")
+
+    # # ideal_summary is the ideal summary weighted across 3 annotators
+    ideal_summary = return_ideal_summary(anno_score_sent, num_word_each_sent)
+    save_variable(ideal_summary, "ideal_summary")
+=======
 # Dictionary of ideal summaries weighted across 3 annotators
 ideal_summaries = return_ideal_summaries(anno_score_sent, num_word_each_sent)
+>>>>>>> a4705e62d56b56f25b75f32eb98ef7ea5a4665fd

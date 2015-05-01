@@ -2,6 +2,7 @@ import xml.etree.ElementTree as ET
 import vectorize_bc3
 import copy
 from helpers import *
+from data.helper_variables import *
 
 def recall_score_thread(ideal_summary, predicted_summary, thread_listno):
     '''Return the recall score for the <thread> that has thread_listno.'''
