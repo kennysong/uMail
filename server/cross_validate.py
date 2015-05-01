@@ -2,6 +2,7 @@ import xml.etree.ElementTree as ET
 import vectorize_bc3
 import copy
 from helpers import *
+from data.helper_variables import *
 
 def vect_sent_thread(bc3_vector_dict, thread_listno):
     '''Return the vectors of the sentences  of the <thread> that has thread_listno.'''
