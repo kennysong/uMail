@@ -214,17 +214,15 @@ def ideal_summary_thread(thread_listno, anno_score_sent, num_word_each_sent):
     ideal_summary = sorted(ideal_summary)
     return ideal_summary
 
-def return_ideal_summary(anno_score_sent, num_word_each_sent):
+def return_ideal_summaries(anno_score_sent, num_word_each_sent):
     "Return the ideal summary from the annotaion score for each <thread> in dictionary form "
-    ideal_summary = dict()
+    ideal_summaries = dict()
     for thread_listno in anno_score_sent:
-        ideal_summary[thread_listno] = ideal_summary_thread(thread_listno, anno_score_sent, num_word_each_sent)
-    return ideal_summary
+        ideal_summaries[thread_listno] = ideal_summary_thread(thread_listno, anno_score_sent, num_word_each_sent)
+    return ideal_summaries
 
 # if __name__ == '__main__':
 
-# This is bad code! Should not depend on calling functions down here that get accessed by cross_validate.py. Better to just evaluate the variables in cross_validate.py.
-# why is it bad ?
 tree = ET.parse("bc3_corpus/bc3corpus.1.0/annotation.xml")
 root_annotation = tree.getroot()
 
@@ -246,6 +244,5 @@ bc3_vector_dict = return_bc3_vector_dict(root_corpus, num_word_each_sent, senten
 # bc3_score_dict is the bc_3vectorized scores in dictionary format
 bc3_score_dict = return_bc3_score_dict(root_corpus, num_word_each_sent, scores)
 
-# ideal_summary is the ideal summary weighted across 3 annotators
-ideal_summary = return_ideal_summary(anno_score_sent, num_word_each_sent)
-
+# Dictionary of ideal summaries weighted across 3 annotators
+ideal_summaries = return_ideal_summaries(anno_score_sent, num_word_each_sent)
