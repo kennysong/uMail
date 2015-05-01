@@ -86,13 +86,16 @@ def cross_validate(root_corpus, bc3_vector_dict, bc3_score_dict, ideal_summaries
         # update_predicted_sent_scores updates the predicted_sent_scores with the predicted score of the sentence in a validation set
         update_predicted_sent_scores(predicted_sent_scores, valid_predicted_scores, valid_listnos)
 
-    # Calculate the recall of each thread
-    for thread_listno in predicted_sent_scores:
-        predicted_sent_scores[thread_listno] = ideal_summary_thread(thread_listno, predicted_sent_scores, num_word_each_sent)
+   
+    # Get the summaries for each thread in the same dictionary structure
+    cross_validation_summaries = copy.deepcopy(predicted_sent_scores)
+    for thread_listno in cross_validation_summaries:
+        cross_validation_summaries[thread_listno] = get_thread_summary(thread_listno, predicted_sent_scores, num_word_each_sent)
 
+    # Calculate the recall of each thread
     recalls = []
     for thread_listno in ideal_summaries:
-        recall = recall_score_thread(ideal_summaries, predicted_sent_scores, thread_listno)
+        recall = recall_score_thread(ideal_summaries, cross_validation_summaries, thread_listno)
         recalls.append(recall)
 
     # Calculate the average recall over all threads

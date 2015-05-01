@@ -193,32 +193,32 @@ def sort_dict_by_value(dict):
     dict_sorted = sorted(dict.items(), key=operator.itemgetter(1), reverse = True)
     return dict_sorted
 
-def ideal_summary_thread(thread_listno, anno_score_sent, num_word_each_sent):
-    '''Return ideal summary of a thread with the length limit.'''
+def get_thread_summary(thread_listno, sentence_scores, num_word_each_sent):
+    '''Return summary of a thread with the length limit, as a list of sentence IDs.'''
 
     # length_limit is the length limit of ideal summary - 30% of original email by word count
     length_limit = sum(num_word_each_sent[thread_listno].values())/100*30
 
     # Sort each sentence in a <thread> according to annotation score
-    sent_sorted_by_importance = sort_dict_by_value(anno_score_sent[thread_listno])
+    sent_sorted_by_importance = sort_dict_by_value(sentence_scores[thread_listno])
 
-    ideal_summary_word_count = 0
-    ideal_summary = []
+    summary_word_count = 0
+    summary = []
 
     for sent in sent_sorted_by_importance:
-        ideal_summary.append(sent[0])
-        ideal_summary_word_count += ideal_summary_word_count + num_word_each_sent[thread_listno][sent[0]]
-        if ideal_summary_word_count >= length_limit:
+        summary.append(sent[0])
+        summary_word_count += summary_word_count + num_word_each_sent[thread_listno][sent[0]]
+        if summary_word_count >= length_limit:
             break
 
-    ideal_summary = sorted(ideal_summary)
-    return ideal_summary
+    summary = sorted(summary)
+    return summary
 
 def return_ideal_summaries(anno_score_sent, num_word_each_sent):
-    "Return the ideal summary from the annotaion score for each <thread> in dictionary form "
+    '''Return the ideal summary from the annotaion score for each <thread> in dictionary form.'''
     ideal_summaries = dict()
     for thread_listno in anno_score_sent:
-        ideal_summaries[thread_listno] = ideal_summary_thread(thread_listno, anno_score_sent, num_word_each_sent)
+        ideal_summaries[thread_listno] = get_thread_summary(thread_listno, anno_score_sent, num_word_each_sent)
     return ideal_summaries
 
 # if __name__ == '__main__':
