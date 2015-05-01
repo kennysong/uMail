@@ -214,17 +214,22 @@ def ideal_summary_thread(thread_listno, anno_score_sent, num_word_each_sent):
     ideal_summary = sorted(ideal_summary)
     return ideal_summary
 
-def return_ideal_summary(anno_score_sent, num_word_each_sent):
+def return_ideal_summaries(anno_score_sent, num_word_each_sent):
     "Return the ideal summary from the annotaion score for each <thread> in dictionary form "
-    ideal_summary = dict()
+    ideal_summaries = dict()
     for thread_listno in anno_score_sent:
-        ideal_summary[thread_listno] = ideal_summary_thread(thread_listno, anno_score_sent, num_word_each_sent)
-    return ideal_summary
+        ideal_summaries[thread_listno] = ideal_summary_thread(thread_listno, anno_score_sent, num_word_each_sent)
+    return ideal_summaries
 
 def clear_helper_variables():
     "delete everything in the file data/helper_variables.py"
 
+<<<<<<< HEAD
     f = open("data/helper_variables.py", "w")
+=======
+tree = ET.parse("bc3_corpus/bc3corpus.1.0/annotation.xml")
+root_annotation = tree.getroot()
+>>>>>>> a4705e62d56b56f25b75f32eb98ef7ea5a4665fd
 
     f.close
 
@@ -262,6 +267,7 @@ if __name__ == '__main__':
     bc3_vector_dict = return_bc3_vector_dict(root_corpus, num_word_each_sent, sentence_vectors)
     save_variable(bc3_vector_dict, "bc3_vector_dict")
 
+<<<<<<< HEAD
     # bc3_score_dict is the bc_3vectorized scores in dictionary format
     bc3_score_dict = return_bc3_score_dict(root_corpus, num_word_each_sent, scores)
     save_variable(bc3_score_dict, "bc3_score_dict")
@@ -269,3 +275,7 @@ if __name__ == '__main__':
     # # ideal_summary is the ideal summary weighted across 3 annotators
     ideal_summary = return_ideal_summary(anno_score_sent, num_word_each_sent)
     save_variable(ideal_summary, "ideal_summary")
+=======
+# Dictionary of ideal summaries weighted across 3 annotators
+ideal_summaries = return_ideal_summaries(anno_score_sent, num_word_each_sent)
+>>>>>>> a4705e62d56b56f25b75f32eb98ef7ea5a4665fd

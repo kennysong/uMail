@@ -4,6 +4,16 @@ import copy
 from helpers import *
 from data.helper_variables import *
 
+def recall_score_thread(ideal_summary, predicted_summary, thread_listno):
+    '''Return the recall score for the <thread> that has thread_listno.'''
+    recall_thread = 0.0
+    for sent_ID in ideal_summary[thread_listno]:
+        if sent_ID in predicted_summary[thread_listno]:
+            recall_thread += 1
+
+    recall_thread = recall_thread / len(ideal_summary[thread_listno])
+    return recall_thread
+
 def vect_sent_thread(bc3_vector_dict, thread_listno):
     '''Return the vectors of the sentences  of the <thread> that has thread_listno.'''
 
@@ -16,91 +26,94 @@ def score_sent_thread(bc3_score_dict, thread_listno):
     scores = [bc3_score_dict[thread_listno][sent_ID] for sent_ID in bc3_score_dict[thread_listno].keys()]
     return scores
 
-def valid_train_set_thread_listno(validation_first_thread_position, thread_listno_bc3):
+def split_valid_train_listnos(validation_first_thread_position, thread_listnos):
     '''Return the thread_listno of the threads in training set and validation set.
     validation_first_thread_position is the position in the original collections of thread of the first thread of the validation set.'''
 
-    valid_set_thread_listno = [thread_listno for thread_listno in thread_listno_bc3[validation_first_thread_position-1:validation_first_thread_position+4]]
-    train_set_thread_listno = [thread_listno for thread_listno in  thread_listno_bc3 if thread_listno not in valid_set_thread_listno]
-    return train_set_thread_listno, valid_set_thread_listno
+    valid_listnos = [thread_listno for thread_listno in thread_listnos[validation_first_thread_position-1:validation_first_thread_position+4]]
+    train_listnos = [thread_listno for thread_listno in  thread_listnos if thread_listno not in valid_listnos]
+    return train_listnos, valid_listnos
 
-def create_valid_train_set(bc3_vector_dict, bc3_score_dict, train_set_thread_listno, valid_set_thread_listno):
+def create_valid_train_set(bc3_vector_dict, bc3_score_dict, train_listnos, valid_listnos):
     '''Return training, validation set and scores from the thread_listno of the threads in training set and validation set.'''
 
-    valid_set_v = []
-    validation_set_score  = []
-    train_set_v = []
-    training_set_score = []
+    valid_vectors = []
+    valid_scores  = []
+    train_vectors = []
+    train_scores = []
 
-    for thread_listno in valid_set_thread_listno:
-        valid_set_v += vect_sent_thread(bc3_vector_dict, thread_listno)
-        validation_set_score  += score_sent_thread(bc3_score_dict, thread_listno)
+    for thread_listno in valid_listnos:
+        valid_vectors += vect_sent_thread(bc3_vector_dict, thread_listno)
+        valid_scores  += score_sent_thread(bc3_score_dict, thread_listno)
 
-    for thread_listno in train_set_thread_listno:
-        train_set_v += vect_sent_thread(bc3_vector_dict, thread_listno)
-        training_set_score  += score_sent_thread(bc3_score_dict, thread_listno)
+    for thread_listno in train_listnos:
+        train_vectors += vect_sent_thread(bc3_vector_dict, thread_listno)
+        train_scores  += score_sent_thread(bc3_score_dict, thread_listno)
 
-    return train_set_v, training_set_score, valid_set_v, validation_set_score
+    return train_vectors, train_scores, valid_vectors, valid_scores
 
-def validation(train_set_v, training_set_score, valid_set_v, validation_set_score):
-    '''Train classifier on train_set_v. Predict score for each sentence in valid_set_v.'''
+def update_predicted_sent_scores(predicted_sent_scores, valid_predicted_scores, valid_listnos): 
+    '''Update predicted_sent_scores with valid_predicted_scores after every validation run.'''
 
-    random_forest = vectorize_bc3.train_full_classifier(train_set_v, training_set_score)
-    validation_set_predicted_score = [] 
-
-    for sentence in valid_set_v:
-        validation_set_predicted_score.append(float(random_forest.predict(sentence)))
-
-    return validation_set_predicted_score
-
-def update_predicted_score_each_sent(predicted_score_each_sent, validation_set_predicted_score, valid_set_thread_listno): 
-    '''Update predicted_score_each_sent with validation_set_predicted_score after every validation run.'''
-
-    for thread_listno in valid_set_thread_listno:
+    for thread_listno in valid_listnos:
         sentence_count = 0
-        for sent_ID in predicted_score_each_sent[thread_listno].keys():
-            predicted_score_each_sent[thread_listno][sent_ID] = validation_set_predicted_score[sentence_count]
+        for sent_ID in predicted_sent_scores[thread_listno].keys():
+            predicted_sent_scores[thread_listno][sent_ID] = valid_predicted_scores[sentence_count]
             sentence_count += 1
             if sentence_count == num_sent_each_thread[thread_listno]: break
 
-def cross_validate(root_corpus, bc3_vector_dict, bc3_score_dict):
-    '''Perform 10 fold cross validation. Returns what?'''
+def cross_validate(root_corpus, bc3_vector_dict, bc3_score_dict, ideal_summaries):
+    '''Perform 10 fold cross validation. Will return the average weighted recall score for all the validation sets.'''
 
-    # predicted_score_each_sent contains the predicted score of each sentence after 10 fold cross validation
+    # predicted_sent_scores contains the predicted score of each sentence after 10 fold cross validation
     # Copy the structure of bc3_vector_dict
-    predicted_score_each_sent = copy.deepcopy(bc3_vector_dict)
+    # {thread_listno: {sentence_id: score, sentence_id2: score, ...}, ...}
+    predicted_sent_scores = copy.deepcopy(bc3_vector_dict)
 
     # Get all thread listno in bc3 
-    thread_listno_bc3 = [thread_listno_of_current_thread(thread) for thread in root_corpus]
+    thread_listnos = [thread_listno_of_current_thread(thread) for thread in root_corpus]
 
-    # Run cross-validation woohoo
-    for i in range(1,40,4):
-        train_set_thread_listno, valid_set_thread_listno = valid_train_set_thread_listno(i, thread_listno_bc3)
+    # Run 10-fold cross validation, collecting the predicted score for each sentence in the corpus
+    for i in range(1, 40, 4):
+        # Split BC3 vectors into training and validation sets
+        train_listnos, valid_listnos = split_valid_train_listnos(i, thread_listnos)
+        train_vectors, train_scores, valid_vectors, valid_scores = \
+            create_valid_train_set(bc3_vector_dict, bc3_score_dict, train_listnos, valid_listnos)
 
-        train_set_v, training_set_score, valid_set_v, validation_set_score = create_valid_train_set(bc3_vector_dict, bc3_score_dict, train_set_thread_listno, valid_set_thread_listno)
+        # Train a classifier and test on validation set, recording the scores
+        random_forest = vectorize_bc3.train_full_classifier(train_vectors, train_scores)
+        valid_predicted_scores = [float(random_forest.predict(sentence)) for sentence in valid_vectors]
 
-        # validation_set_predicted_score is the predicted score of the sentence in the validation set
-        validation_set_predicted_score = validation(train_set_v, training_set_score, valid_set_v, validation_set_score)
+        # update_predicted_sent_scores updates the predicted_sent_scores with the predicted score of the sentence in a validation set
+        update_predicted_sent_scores(predicted_sent_scores, valid_predicted_scores, valid_listnos)
 
-        # update_predicted_score_each_sent updates the predicted_score_each_sent with the predicted score of the sentence in a validation set
-        update_predicted_score_each_sent(predicted_score_each_sent, validation_set_predicted_score, valid_set_thread_listno)
+    # Calculate the recall of each thread
+    for thread_listno in predicted_sent_scores:
+        predicted_sent_scores[thread_listno] = ideal_summary_thread(thread_listno, predicted_sent_scores, num_word_each_sent)
 
-    return predicted_score_each_sent
+    recalls = []
+    for thread_listno in ideal_summaries:
+        recall = recall_score_thread(ideal_summaries, predicted_sent_scores, thread_listno)
+        recalls.append(recall)
 
-tree  = ET.parse("bc3_corpus/bc3corpus.1.0/corpus.xml")
-root_corpus  = tree.getroot() 
+    # Calculate the average recall over all threads
+    avg_recall = sum(recalls) / len(recalls)
 
-predicted_score_each_sent = cross_validate(root_corpus, bc3_vector_dict, bc3_score_dict)
+    return avg_recall
 
-# See the variance in predicted score for each sentence by uncomment and run the section below
-# test = []
-# test2 = []
-# for i in range(20):
-#     predicted_score_each_sent = cross_validate(root_corpus, bc3_vector_dict, bc3_score_dict)
+if __name__ == '__main__':
+    # Set up some variables to calculate recall
+    root_annotation = ET.parse("bc3_corpus/bc3corpus.1.0/annotation.xml").getroot()
+    root_corpus = ET.parse("bc3_corpus/bc3corpus.1.0/corpus.xml").getroot()
 
-#     test.append(predicted_score_each_sent["066-15270802"]["1.4"])
-#     test2.append(predicted_score_each_sent["066-15270802"]["1.3"])
+    num_word_each_sent = return_num_word_each_sent(root_corpus)
+    anno_score_sent = return_anno_score_sent(root_annotation, num_word_each_sent)
+    num_sent_each_thread = return_num_sent_each_thread(root_corpus)
+    bc3_vector_dict = return_bc3_vector_dict(root_corpus, num_word_each_sent, sentence_vectors)
+    bc3_score_dict = return_bc3_score_dict(root_corpus, num_word_each_sent, scores)
+    ideal_summaries = return_ideal_summaries(anno_score_sent, num_word_each_sent)
 
-# print test
-# print 
-# print test2
+    # Calculate and print out recall several times
+    for i in range(100):
+        recall = cross_validate(root_corpus, bc3_vector_dict, bc3_score_dict, ideal_summaries)
+        print(recall)
