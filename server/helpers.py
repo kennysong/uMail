@@ -3,6 +3,7 @@ import operator
 import cPickle as pickle
 import copy
 from data.vectorized_bc3_data import *
+from vectorize_bc3 import *
 
 def thread_listno_of_current_thread(thread):
     '''Get thread_listno of current thread.'''
@@ -265,9 +266,9 @@ if __name__ == '__main__':
     bc3_score_dict = return_bc3_score_dict(root_corpus, num_word_each_sent, scores)
     save_variable(bc3_score_dict, "bc3_score_dict")
 
-    # # ideal_summary is the ideal summary weighted across 3 annotators
-    ideal_summary = return_ideal_summary(anno_score_sent, num_word_each_sent)
-    save_variable(ideal_summary, "ideal_summary")
-    
+    # Train classifier on full BC3 corpus and return the trained classifier 
+    random_forest_full = train_classifier(sentence_vectors, scores)
+    pickle_data(random_forest_full, "random_forest_full")
+
     # Dictionary of ideal summaries weighted across 3 annotators
     ideal_summaries = return_ideal_summaries(anno_score_sent, num_word_each_sent)

@@ -81,7 +81,7 @@ def cross_validate(root_corpus, bc3_vector_dict, bc3_score_dict, ideal_summaries
             create_valid_train_set(bc3_vector_dict, bc3_score_dict, train_listnos, valid_listnos)
 
         # Train a classifier and test on validation set, recording the scores
-        random_forest = vectorize_bc3.train_full_classifier(train_vectors, train_scores)
+        random_forest = vectorize_bc3.train_classifier(train_vectors, train_scores)
         valid_predicted_scores = [float(random_forest.predict(sentence)) for sentence in valid_vectors]
 
         # update_predicted_sent_scores updates the predicted_sent_scores with the predicted score of the sentence in a validation set
