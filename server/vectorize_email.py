@@ -9,6 +9,7 @@ import vectorize_bc3 as bc3
 
 from scipy.spatial import distance
 from external_modules import inflect
+from helpers import *
 
 def get_tf_idf_vector(sentence, email, bc3_threads, vocab_list_index):
     '''Takes in a sentence and metadata, and returns a tf-idf vector of the sentence words.
@@ -80,8 +81,8 @@ def vectorize_email(email_message, title, to_cc):
 
     # Load the BC3 corpus for tfidf testing
     tree = ET.parse('bc3_corpus/bc3corpus.1.0/corpus.xml')
-    root = tree.getroot()
-    threads = bc3.get_threads_in_root(root)
+    root_corpus = tree.getroot()
+    threads = bc3.get_threads_in_root(root_corpus)
 
     # Calculate the vocab list for corpus + the email
     # Note: We use the cached vocab list in data.bc3_vocab_data!
@@ -90,8 +91,6 @@ def vectorize_email(email_message, title, to_cc):
     email_vocab_list = set(bc3.clean_up_words(bc3.get_words_in_email(email_message)))
     all_vocab_list = bc3_vocab_list.union(email_vocab_list)
     all_vocab_list_index = {word: index for index, word in enumerate(all_vocab_list)}
-
-    print("Calculated vocab list.")
 
     # Precalculate the tf-idf vectors and centroid vectors
     cached_tf_idf_vectors, cached_tf_local_idf_vectors = dict(), dict()
@@ -103,8 +102,6 @@ def vectorize_email(email_message, title, to_cc):
         cached_tf_local_idf_vectors[i] = tf_local_idf_vector
     centroid_vector = sum(cached_tf_idf_vectors.values()) / len(cached_tf_idf_vectors)
     local_centroid_vector = sum(cached_tf_local_idf_vectors.values()) / len(cached_tf_local_idf_vectors)
-
-    print("Calculated tf-idf and centroid vectors.")
 
     sentence_vectors = []
     for i in range(len(sentences)):
@@ -122,11 +119,51 @@ def vectorize_email(email_message, title, to_cc):
 
     return sentence_vectors
 
+def sent_sorted_importance(random_forest_full, sent_vectors, sentences):
+    "Return the sentences sorted by importance score"
+
+    sent_scores = [float(random_forest_full.predict(sent)) for sent in sent_vectors]
+
+    sent_sorted_importance = [x for (y, x) in sorted(zip(sent_scores, sentences), reverse=True)]
+
+    return sent_sorted_importance
+
+def sent_order(sentences):
+    "Return the position of each sentence in the email as a dictionary {sentence1: index1, sentence2: index2, ...}"
+
+    sent_index= dict()
+
+    count = 1 
+
+    for sent in sentences:
+        sent_index[sent] = count 
+        count += 1
+
+    return sent_index
+
+def main(random_forest_full, sent_vectors, email_message):
+    "Output a list of sentences sorted by importance and a diciontary of the order of the sentences"
+
+    sentences= bc3.get_sentences_in_email(email_message)
+
+    return sent_sorted_importance(random_forest_full, sent_vectors, sentences), sent_order(sentences)
+
 if __name__ == '__main__':
     # Test vectorizing an email and output the resulting vector
     title = "Constitution Revisions & Elections Info Meeting"
     to_cc = "NYU Shanghai Students CO17 <nyushanghai-students-co17-group@nyu.edu>, NYU Shanghai Students CO18 <nyushanghai-students-co18-group@nyu.edu>"
-    email_message = "My fellow students. A belated Happy New Year and warm wishes for the rest of the semester ahead. Our time here at NYU Shanghai is flying by swiftly and I am excited to announce we are approaching the election season of the 2015-2016 Student Government at NYU Shanghai. I would like to invite you to our Elections Informational Meeting on March 5th, during the 12:30-1:45 lunch hour (room TBD) for an extremely important and insightful chance to learn about the upcoming elections. At this meeting, the Student Government and the Elections Board will be present to provide information and answer questions about the election timeline, candidacy, and campaign rules and regulations. For those interested in running for an elected position, you are highly encouraged to attend for your own benefit. This year's elections will be notably different from previous elections as the current Executive Board has been working determinedly to revise the Student Constitution and structure of Student Government to reflect a more efficient,  inclusive, and precise organizational structure that will better suit the needs of the Student Body and Student Governments of the future. We invite you all to read through the 2015 Constitutional Revisions and note the changes from the Original Constitution. You will find the differences to be at once significant, but nuanced. The Student Constitution will be open to you for comment until March. 5. After you review the Constitution, please vote to ratify the revisions here on OrgSync. If you have comments on the Constitution, please email shanghai.student.government@nyu.edu. Please RSVP here if you plan to attend the Elections Informational Meeting. Please see below to read the 2015 Constitutional Revisions. Student Constitution 2015-2016. If you wish to read the Original Constitution, see below. Student Government is the heart of student interests and activity at NYU Shanghai and the Student Constitution gives life to the Student Government. If you are passionate about enhancing the student experience and community spirit at NYU Shanghai, I encourage you to read the Constitution, understand it, and run for Student Government."
+    email_message = "My fellow students. A belated Happy New Year and warm wishes for the rest of the semester ahead. Our time here at NYU Shanghai is flying by swiftly and I am excited to announce we are approaching the election season of the 2015-2016 Student Government at NYU Shanghai. I would like to invite you to our Elections Informational Meeting on March 5th, during the 12:30-1:45 lunch hour (room TBD) for an extremely important and insightful chance to learn about the upcoming elections. At this meeting, the Student Government and the Elections Board will be present to provide information and answer questions about the election timeline, candidacy, and campaign rules and regulations. For those interested in running for an elected position, you are highly encouraged to attend for your own benefit. This year's elections will be notably different from previous elections as the current Executive Board has been working determinedly to revise the Student Constitution and structure of Student Government to reflect a more efficient,  inclusive, and precise organizational structure that will better suit the needs of the Student Body and Student Governments of the future. We invite you all to read through the 2015 Constitutional Revisions and note the changes from the Original Constitution. You will find the differences to be at once significant, but nuanced. The Student Constitution will be open to you for comment until March 5. After you review the Constitution, please vote to ratify the revisions here on OrgSync. If you have comments on the Constitution, please email shanghai.student.government@nyu.edu. Please RSVP here if you plan to attend the Elections Informational Meeting. Please see below to read the 2015 Constitutional Revisions. Student Constitution 2015-2016. If you wish to read the Original Constitution, see below. Student Government is the heart of student interests and activity at NYU Shanghai and the Student Constitution gives life to the Student Government. If you are passionate about enhancing the student experience and community spirit at NYU Shanghai, I encourage you to read the Constitution, understand it, and run for Student Government."
 
-    vectors = vectorize_email(email_message, title, to_cc)
-    print(vectors)
+    sent_vectors = vectorize_email(email_message, title, to_cc)
+
+    #Output a list of sentences sorted by importance and a diciontary of the order of the sentences
+    random_forest_full = pickle_load("random_forest_full")
+
+    sent_sorted, sent_index = main(random_forest_full, sent_vectors, email_message)
+
+    print sent_sorted
+    print 
+    print sent_index
+
+    #The whole process takes about 9.5 seconds
+    #Vectorize email alone takes 9 seconds

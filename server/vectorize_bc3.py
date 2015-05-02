@@ -59,8 +59,8 @@ def get_sentences_in_email(email):
         return list(text_tag)
     else:
         # If email is a string
-        sentences = re.split("[\.\?!]", email)
-        sentences = [sentence.strip() for sentence in sentences if sentence != '']
+
+        sentences = re.split('[.?!](?![a-zA-Z])', email)
         return sentences
 
 def get_words_in_thread(thread):
@@ -505,8 +505,8 @@ def get_bc3_vectors_and_scores():
 
     return aligned_sentence_vectors, aligned_scores
 
-def train_full_classifier(aligned_sentence_vectors, aligned_scores):
-    '''Trains a classifier on the entire BC3 corpus, returns RandomForest object.'''
+def train_classifier(aligned_sentence_vectors, aligned_scores):
+    '''Trains a classifier, returns RandomForest object.'''
     random_forest = ensemble.RandomForestRegressor()
     random_forest.fit(aligned_sentence_vectors, aligned_scores)
 
