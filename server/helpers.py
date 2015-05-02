@@ -264,10 +264,6 @@ if __name__ == '__main__':
     # bc3_score_dict is the bc_3vectorized scores in dictionary format
     bc3_score_dict = return_bc3_score_dict(root_corpus, num_word_each_sent, scores)
     save_variable(bc3_score_dict, "bc3_score_dict")
-
-    # # ideal_summary is the ideal summary weighted across 3 annotators
-    ideal_summary = return_ideal_summary(anno_score_sent, num_word_each_sent)
-    save_variable(ideal_summary, "ideal_summary")
     
     # Dictionary of ideal summaries weighted across 3 annotators
     ideal_summaries = return_ideal_summaries(anno_score_sent, num_word_each_sent)
