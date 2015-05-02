@@ -17,3 +17,18 @@ var extensionURL = chrome.extension.getURL('');
 var uMailURLTag = document.createElement('script');
 uMailURLTag.text = 'var uMailExtensionURL = "' + extensionURL + '";';
 (document.head || document.documentElement).appendChild(uMailURLTag);
+
+// Communication with the injected umail.js script
+window.addEventListener('message', function(event) {
+    if (event.data.type == 'new_email_request') {
+        // Message background.js to send a request to /new_email
+        chrome.runtime.sendMessage({
+            method: 'POST',
+            action: 'xhttp',
+            url: 'http://52.6.28.16/new_email',
+            data: event.data.data
+        }, function(responseText) {
+            window.postMessage({type: 'new_email_response', data: responseText}, '*');
+        });
+    }
+});

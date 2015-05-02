@@ -15,15 +15,23 @@
   "content_scripts": [
     {
       "matches": ["https://mail.google.com/*"],
-      "js": ["js/umail/content.js"]
+      "js": ["js/gmail-js/jquery-1.10.2.min.js", "js/umail/content.js"]
     }
   ],
+  "background": {
+    "scripts": ["js/umail/background.js"],
+    "persistent": false
+  },
 
   // So we can inject these as <script>s that have full access to the DOM
   "web_accessible_resources": [
     "js/gmail-js/*",
     "js/umail/umail.js",
     "img/*"
+  ],
+
+  "permissions": [
+    "http://52.6.28.16/"
   ],
 
   "manifest_version": 2

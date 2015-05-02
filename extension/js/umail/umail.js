@@ -18,22 +18,13 @@ var emailOpened = function(id) {
   // Get email data of first email in thread
   var emailData = gmail.get.email_data(id);
   var firstEmail = emailData.threads[id]; // ID of thread == ID of first email
-  var sendData = {
-                    "email": firstEmail.content_plain,
-                    "subject": firstEmail.subject,
-                    "to": firstEmail.to,
-                    "cc": firstEmail.cc
-                  };
+  var dataString = "email=" + encodeURIComponent(firstEmail.content_plain) +
+                   "&subject=" + encodeURIComponent(firstEmail.subject) +
+                   "&to=" + encodeURIComponent(firstEmail.to) +
+                   "&cc=" + encodeURIComponent(firstEmail.cc);
 
-  // Send data to server
-  // We do this on email load (rather than on button click) to reduce latency
-  $.post("52.6.28.16/new_email", sendData)
-    .done(function(d) { 
-      console.log(d); 
-    })
-    .error(function(error) {
-      console.log(error);
-    })
+  // Send data to server on email load (rather than on button click) to reduce latency
+  window.postMessage({type: 'new_email_request', data: dataString}, '*');
 
   // Add Summarize button to email view toolbar
   addUMailButton();
@@ -71,5 +62,13 @@ var addUMailButton = function() {
   buttonContainer.html(button);
   toolbar.append(buttonContainer);
 }
+
+// Message listeners for communication with content.js
+window.addEventListener('message', function(event) {
+    // Listener for response from /new_email
+    if (event.data.type == 'new_email_response') {
+        console.log(event.data.data);
+    }
+});
 
 checkLoaded();
