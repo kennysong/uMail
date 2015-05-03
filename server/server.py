@@ -1,4 +1,5 @@
 import os
+import json
 from flask import Flask
 from flask import request
 
@@ -17,9 +18,13 @@ def new_email():
     email_text = request.form['email']
     to = request.form['to']
     cc = request.form['cc']
-    to_cc = to + ',' cc
+    to_cc = to + ',' + cc
 
-    return request.form['subject']
+    sent_sorted, sent_index = process_email(email_text, subject, to_cc)
+    summary = {'sent_sorted': sent_sorted, 'sent_index': sent_index}
+    summaryJSON = json.dumps(summary)
+
+    return summaryJSON
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8080)

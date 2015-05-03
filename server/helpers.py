@@ -2,6 +2,7 @@ import xml.etree.ElementTree as ET
 import operator
 import cPickle as pickle
 import copy
+import os
 
 def thread_listno_of_current_thread(thread):
     '''Get thread_listno of current thread.'''
@@ -11,14 +12,14 @@ def thread_listno_of_current_thread(thread):
 
 def pickle_data(data, file_name):
     '''Pickle data into /data as file_name.pck.'''
-    data_location = "data/" + file_name + ".pck"
+    data_location = os.path.dirname(os.path.abspath(__file__)) + "/data/" + file_name + ".pck"
     f = open(data_location, "w")
     pickle.dump(data,f)
     f.close()
 
 def pickle_load(file_name):
     '''Returns an unpickled object from file_name.pck.'''
-    data_location = "data/" + file_name + ".pck"
+    data_location = os.path.dirname(os.path.abspath(__file__)) + "/data/" + file_name + ".pck"
     f = open(data_location, "r")
     return pickle.load(f)
 
@@ -207,13 +208,13 @@ def return_ideal_summaries(anno_score_sent, num_word_each_sent):
 def clear_helper_variables():
     "delete everything in the file data/helper_variables.py"
 
-    f = open("data/helper_variables.py", "w")
+    f = open(os.path.dirname(os.path.abspath(__file__)) + "/data/helper_variables.py", "w")
     f.close()
 
 def save_variable(variable, variable_name = str):
     "Save the variable into data/helper_variables"
 
-    f = open("data/helper_variables.py", "a")
+    f = open(os.path.dirname(os.path.abspath(__file__)) + "/data/helper_variables.py", "a")
 
     f.write(variable_name + " = " + repr(variable) + "\n" +"\n")
 
@@ -222,10 +223,10 @@ def save_variable(variable, variable_name = str):
 def save_cross_validation_variables():
     '''Saves all variables needed in cross_validation.py to helper_variables.py 
        and pickles.'''
-    tree = ET.parse("bc3_corpus/bc3corpus.1.0/annotation.xml")
+    tree = ET.parse(os.path.dirname(os.path.abspath(__file__)) + "/bc3_corpus/bc3corpus.1.0/annotation.xml")
     root_annotation = tree.getroot()
 
-    tree = ET.parse("bc3_corpus/bc3corpus.1.0/corpus.xml")
+    tree = ET.parse(os.path.dirname(os.path.abspath(__file__)) + "/bc3_corpus/bc3corpus.1.0/corpus.xml")
     root_corpus = tree.getroot()
 
     # Vectorize the bc3 corpus
@@ -270,7 +271,7 @@ def save_vectorize_bc3_variables():
 
     # Calculate vocab list for entire corpus
     # This is needed for the tf-idf vectors, see function for more details
-    tree = ET.parse('bc3_corpus/bc3corpus.1.0/corpus.xml')
+    tree = ET.parse(os.path.dirname(os.path.abspath(__file__)) + '/bc3_corpus/bc3corpus.1.0/corpus.xml')
     root = tree.getroot()
 
     vocab_list, vocab_list_set = [], set()
@@ -306,10 +307,10 @@ def save_vectorize_bc3_variables():
     #         print("Calculated tf-idf for thread %i" % thread_index)
 
     # # Pickle the tf-idf dictionaries
-    # tf_idf_file = open("data/bc3_tf_idf_vectors", "wb")
+    # tf_idf_file = open(os.path.dirname(os.path.abspath(__file__)) + "/data/bc3_tf_idf_vectors", "wb")
     # pickle.dump(cached_tf_idf_vectors, tf_idf_file, protocol=2)
     # tf_idf_file.close()
-    # tf_local_idf_file = open("data/bc3_tf_local_idf_vectors", "wb")
+    # tf_local_idf_file = open(os.path.dirname(os.path.abspath(__file__)) + "/data/bc3_tf_local_idf_vectors", "wb")
     # pickle.dump(cached_tf_local_idf_vectors, tf_local_idf_file, protocol=2)
     # tf_local_idf_file.close()
 
@@ -322,7 +323,7 @@ def save_vectorize_email_variables():
     from vectorize_bc3 import get_threads_in_root, clean_up_words, get_bc3_vectors_and_scores, get_words_in_thread
 
     # Calculate words in each thread, save to threads_words.py
-    tree = ET.parse('bc3_corpus/bc3corpus.1.0/corpus.xml')
+    tree = ET.parse(os.path.dirname(os.path.abspath(__file__)) + '/bc3_corpus/bc3corpus.1.0/corpus.xml')
     root_corpus = tree.getroot()
     threads = get_threads_in_root(root_corpus)
     threads_words = [set(clean_up_words(get_words_in_thread(thread))) for thread in threads]

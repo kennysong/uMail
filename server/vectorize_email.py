@@ -70,7 +70,7 @@ def vectorize_email(email_message, title, to_cc):
     sentences = bc3.get_sentences_in_email(email_message)
 
     # Load the BC3 corpus for tfidf testing
-    tree = ET.parse('bc3_corpus/bc3corpus.1.0/corpus.xml')
+    tree = ET.parse(os.path.dirname(os.path.abspath(__file__)) + '/bc3_corpus/bc3corpus.1.0/corpus.xml')
     root_corpus = tree.getroot()
     threads = bc3.get_threads_in_root(root_corpus)
 
