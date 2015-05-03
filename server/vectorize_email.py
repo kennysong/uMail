@@ -63,7 +63,6 @@ def get_tf_local_idf_vector(sentence, email, email_words, sentence_words, vocab_
 
     return tf_idf_vector
 
-@profile
 def vectorize_email(email_message, title, to_cc):
     '''Takes in an email and metadata, returns list of feature vectors for sentences.'''
 
