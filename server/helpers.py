@@ -3,6 +3,8 @@ import operator
 import cPickle as pickle
 import copy
 import os
+import nltk
+import re
 
 def thread_listno_of_current_thread(thread):
     '''Get thread_listno of current thread.'''
@@ -350,3 +352,26 @@ def save_all_variables():
     print('In save_vectorize_email_variables()')
     save_vectorize_email_variables()
     print("Completed save_all_variables().")
+<<<<<<< HEAD
+=======
+
+def remove_adverb(string):
+    "Take in a string, remove adverbs from the strings, return the strings without adverbs"
+
+    #Tokenize string
+    string_tokenized = nltk.word_tokenize(string)
+
+    #Tag each tokens with its sentence functions
+    string_tagged = nltk.pos_tag(string_tokenized)
+
+    adverbs = []
+
+    for word in string_tagged:
+        if word[1] == "RB": adverbs.append(word[0])
+
+    remove = '|'.join(adverbs)
+    regex = re.compile(r'\b('+remove+r')\b', flags=re.IGNORECASE)
+    string = regex.sub("", string)
+
+    return string
+>>>>>>> 868964727badf72189c6ee922e3ef93e70b3de79
