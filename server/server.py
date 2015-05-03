@@ -20,8 +20,12 @@ def new_email():
     cc = request.form['cc']
     to_cc = to + ',' + cc
 
-    sent_sorted, sent_index = process_email(email_text, subject, to_cc)
-    summary = {'sent_sorted': sent_sorted, 'sent_index': sent_index}
+    sent_sorted, sent_index, processed_sent_to_original = process_email(email_text, subject, to_cc)
+    summary = {
+                'sent_sorted': sent_sorted, 
+                'sent_index': sent_index, 
+                'processed_sent_to_original': processed_sent_to_original
+                }
     summaryJSON = json.dumps(summary)
 
     return summaryJSON
