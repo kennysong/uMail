@@ -255,7 +255,7 @@ def get_sentenceID_from_thread(thread):
     return sentenceID
 
 def normalize_score(score):
-    tree_corpus = ET.parse("bc3_corpus/bc3corpus.1.0/corpus.xml")
+    tree_corpus = ET.parse(os.path.dirname(os.path.abspath(__file__)) + "/bc3_corpus/bc3corpus.1.0/corpus.xml")
     root_corpus = tree_corpus.getroot()
 
     corpus_sentence = dict()
@@ -277,10 +277,10 @@ def normalize_score(score):
     return score
 
 def get_annotated_scores():
-    tree_annotation = ET.parse('bc3_corpus/bc3corpus.1.0/annotation.xml')
+    tree_annotation = ET.parse(os.path.dirname(os.path.abspath(__file__)) + '/bc3_corpus/bc3corpus.1.0/annotation.xml')
     root_annotation = tree_annotation.getroot()
 
-    tree_corpus = ET.parse("bc3_corpus/bc3corpus.1.0/corpus.xml")
+    tree_corpus = ET.parse(os.path.dirname(os.path.abspath(__file__)) + "/bc3_corpus/bc3corpus.1.0/corpus.xml")
     root_corpus = tree_corpus.getroot()
 
     # Dictionary of thread number, each of which is another dictionary of the ID of each sentences in a thread
@@ -312,7 +312,7 @@ def vectorize_bc3_corpus():
        and a dictionary of {vector: vector/sentence metadata}.'''
 
     # Set up XML tree
-    tree = ET.parse('bc3_corpus/bc3corpus.1.0/corpus.xml')
+    tree = ET.parse(os.path.dirname(os.path.abspath(__file__)) + '/bc3_corpus/bc3corpus.1.0/corpus.xml')
     root = tree.getroot()
 
     # Get word occurrence counts for each thread
@@ -332,8 +332,8 @@ def vectorize_bc3_corpus():
     print("Finished constructing vocab list")
 
     # Load tf_idf vector from pickled cache {thread_id-sentence_id: tf_idf vector}
-    tf_idf_file = open("data/bc3_tf_idf_vectors", "rb")
-    tf_local_idf_file = open("data/bc3_tf_local_idf_vectors", "rb")
+    tf_idf_file = open(os.path.dirname(os.path.abspath(__file__)) + "/data/bc3_tf_idf_vectors", "rb")
+    tf_local_idf_file = open(os.path.dirname(os.path.abspath(__file__)) + "/data/bc3_tf_local_idf_vectors", "rb")
     cached_tf_idf_vectors = pickle.load(tf_idf_file)
     cached_tf_local_idf_vectors = pickle.load(tf_local_idf_file)
     tf_idf_file.close()

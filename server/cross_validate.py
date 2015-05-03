@@ -105,8 +105,8 @@ def cross_validate(root_corpus, bc3_vector_dict, bc3_score_dict, ideal_summaries
 
 if __name__ == '__main__':
     # Set up some variables to calculate recall
-    root_annotation = ET.parse("bc3_corpus/bc3corpus.1.0/annotation.xml").getroot()
-    root_corpus = ET.parse("bc3_corpus/bc3corpus.1.0/corpus.xml").getroot()
+    root_annotation = ET.parse(os.path.dirname(os.path.abspath(__file__)) + "/bc3_corpus/bc3corpus.1.0/annotation.xml").getroot()
+    root_corpus = ET.parse(os.path.dirname(os.path.abspath(__file__)) + "/bc3_corpus/bc3corpus.1.0/corpus.xml").getroot()
 
     # Import precalculated variables for bc3 corpus
     from data.helper_variables import bc3_vector_dict, bc3_score_dict, ideal_summaries
