@@ -82,7 +82,7 @@ def vectorize_email(email_message, title, to_cc):
     # This is needed for the tf-idf vectors, see function for more details
     from data.helper_variables import bc3_vocab_list
     bc3_vocab_list = set(bc3_vocab_list)
-    email_words = bc3.clean_up_words(bc3.get_words_in_email(email_message))
+    email_words = bc3.get_words_in_email(email_message)
     email_vocab_list = set(email_words)
     all_vocab_list = bc3_vocab_list.union(email_vocab_list)
     all_vocab_list_index = {word: index for index, word in enumerate(all_vocab_list)}
@@ -91,7 +91,7 @@ def vectorize_email(email_message, title, to_cc):
     cached_tf_idf_vectors, cached_tf_local_idf_vectors = dict(), dict()
     for i in range(len(sentences)):
         sentence = sentences[i]
-        sentence_words = bc3.clean_up_words(bc3.get_words_in_sentence(sentence))
+        sentence_words = bc3.get_words_in_sentence(sentence)
 
         tf_idf_vector = get_tf_idf_vector(sentence, email_message, email_words, 
                         sentence_words, bc3_threads_words, threads, all_vocab_list_index)

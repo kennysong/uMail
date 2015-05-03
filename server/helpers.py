@@ -269,7 +269,7 @@ def save_vectorize_bc3_variables():
        and pickles.'''
 
     # Import some helper functions from vectorize_bc3.py
-    from vectorize_bc3 import clean_up_words, get_words_in_thread
+    from vectorize_bc3 import get_words_in_thread
 
     # Calculate vocab list for entire corpus
     # This is needed for the tf-idf vectors, see function for more details
@@ -278,7 +278,7 @@ def save_vectorize_bc3_variables():
 
     vocab_list, vocab_list_set = [], set()
     for thread in root:
-        thread_vocab_list = clean_up_words(get_words_in_thread(thread))
+        thread_vocab_list = get_words_in_thread(thread)
         for item in thread_vocab_list:
             if item not in vocab_list_set:
                 vocab_list.append(item)
@@ -322,13 +322,13 @@ def save_vectorize_email_variables():
     '''Saves all variables needed in vectorize_email.py to helper_variables.py'''
 
     # Import some helper functions from vectorize_bc3.py
-    from vectorize_bc3 import get_threads_in_root, clean_up_words, get_bc3_vectors_and_scores, get_words_in_thread
+    from vectorize_bc3 import get_threads_in_root, get_bc3_vectors_and_scores, get_words_in_thread
 
     # Calculate words in each thread, save to threads_words.py
     tree = ET.parse(os.path.dirname(os.path.abspath(__file__)) + '/bc3_corpus/bc3corpus.1.0/corpus.xml')
     root_corpus = tree.getroot()
     threads = get_threads_in_root(root_corpus)
-    threads_words = [set(clean_up_words(get_words_in_thread(thread))) for thread in threads]
+    threads_words = [set(get_words_in_thread(thread)) for thread in threads]
     save_variable(threads_words, 'bc3_threads_words')
 
     # Vectorize the BC3 corpus, and write to vectorized_bc3_data.py

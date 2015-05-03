@@ -49,20 +49,31 @@ def get_sentences_in_email(email):
     '''If email is an ET.Element, returns a list of sentence objects.
        If email is a string, return a list of sentence strings.'''
     if isinstance(email, ET.Element):
-        # If email is an ET.Element
+        # If email is an ET.Element, return list of sentence objects
         text_tag = None
         for i in range(len(email)):
             if email[i].tag == 'Text':
                 text_tag = email[i]
         return list(text_tag)
     else:
-        # If email is a string
+        # If email is a string, return list of sentence strings with punctuation at the end
+        sentences_and_punctuation = re.split('([.?!](?![a-zA-Z]))', email)
+        sentences = []
+        for i in range(len(sentences_and_punctuation)):
+            if sentences_and_punctuation[i] in '.?!' and len(sentences) != 0:
+                # Add punctuation to previous sentence
+                sentences[len(sentences) - 1] += sentences_and_punctuation[i]
+            else:
+                # Append a new sentence to the list
+                sentences.append(sentences_and_punctuation[i])
 
-        sentences = re.split('[.?!](?![a-zA-Z])', email)
+        # Strip whitespace from beginning and end of sentence
+        sentences = [sent.strip() for sent in sentences]
+
         return sentences
 
 def get_words_in_thread(thread):
-    '''Returns a list of all the words in a thread (ET.Element).'''
+    '''Returns a list of all the cleaned words in a thread (ET.Element).'''
     words = []
     emails = get_emails_in_thread(thread)
     for email in emails:
@@ -70,10 +81,7 @@ def get_words_in_thread(thread):
     return words
 
 def get_words_in_email(email):
-    '''Given an email as an ET.Element OR string, return a list of words.
-       (Note: Always use this function to get words in an email, not email_text.split().
-       This first splits the email into sentences, and then words. This WILL split words
-       with .!? as the characters. This is needed for the vectorize_email.tf-idf function.)'''
+    '''Given an email as an ET.Element OR string, return a list of cleaned words.'''
     word_list = []
     sentences = get_sentences_in_email(email)
     for sentence in sentences:
@@ -81,11 +89,11 @@ def get_words_in_email(email):
     return word_list
 
 def get_words_in_sentence(sentence):
-    '''Given a sentence as an ET.Element OR string, return a list of words.'''
+    '''Given a sentence as an ET.Element OR string, return a list of cleaned words.'''
     if isinstance(sentence, ET.Element):
-        return sentence.text.split()
-    else:
-        return sentence.split()
+        sentence = sentence.text
+
+    return clean_up_words(sentence.split())
 
 def clean_up_words(word_list):
     '''Given list of words, returns list of lowercase, alphanumeric-only, singular words.'''
@@ -142,8 +150,8 @@ def get_subject_similarity(subject, sentence):
         subject = subject.text
 
     # Split into lists of words
-    subject_words = clean_up_words(subject.split())
-    sentence_words = clean_up_words(sentence.split())
+    subject_words = get_words_in_sentence(subject)
+    sentence_words = get_words_in_sentence(sentence)
 
     # Get # of words occurring in both
     overlap = len(set(subject_words).intersection(set(sentence_words)))
@@ -155,10 +163,10 @@ def get_tf_idf_vector(sentence, thread, root, word_counts_per_thread, vocab_list
         - vocab_list_index = {word: index} for all the word in the corpus.
         - The tf-idf vectors have length(vocab_list_index) since the centroid is the avg vector.'''
 
-    # Clean up words in the thread and the sentence
+    # Get cleaned words in the thread and the sentence
     threads = get_threads_in_root(root)
-    thread_words = clean_up_words(get_words_in_thread(thread))
-    sentence_words = clean_up_words(sentence.text.split())
+    thread_words = get_words_in_thread(thread)
+    sentence_words = get_words_in_sentence(sentence)
 
     # Calculate term-frequency, number of times word appears in thread, normalized by len(thread)
     tf_vector = np.zeros(len(vocab_list_index))
@@ -170,7 +178,7 @@ def get_tf_idf_vector(sentence, thread, root, word_counts_per_thread, vocab_list
 
     # Calculate inverse document frequency, # of threads in entire corpus that have the word
     idf_vector = np.zeros(len(vocab_list_index))
-    threads_words = [set(clean_up_words(get_words_in_thread(thread))) for thread in threads]
+    threads_words = [set(get_words_in_thread(thread)) for thread in threads]
     for word in sentence_words:
         num_threads_with_word = 0.0
         for thread_words in threads_words:
@@ -190,9 +198,9 @@ def get_tf_local_idf_vector(sentence, thread, root, word_counts_per_thread, voca
        vocab_list_index = {word: index} for all the word in the corpus.
        The tf-local-idf vectors have length(vocab_list_index) since the centroid is the avg vector.'''
 
-    # Clean up words in the thread and the sentence
-    thread_words = clean_up_words(get_words_in_thread(thread))
-    sentence_words = clean_up_words(sentence.text.split())
+    # Get cleaned words in the thread and the sentence
+    thread_words = get_words_in_thread(thread)
+    sentence_words = get_words_in_sentence(sentence)
 
     # Calculate term-frequency, number of times word appears in thread, normalized by len(thread)
     tf_vector = np.zeros(len(vocab_list_index))
@@ -205,7 +213,7 @@ def get_tf_local_idf_vector(sentence, thread, root, word_counts_per_thread, voca
     # Calculate local inverse document frequency, # of emails in thread that have the word
     idf_vector = np.zeros(len(vocab_list_index))
     emails = get_emails_in_thread(thread)
-    emails_words = [set(clean_up_words(get_words_in_email(email))) for email in emails]
+    emails_words = [set(get_words_in_email(email)) for email in emails]
     for word in sentence_words:
         num_emails_with_word = 0.0
         for email_words in emails_words:

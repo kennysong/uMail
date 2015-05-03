@@ -1,11 +1,13 @@
 // Global Gmail.js object
 var gmail;
 
-// Global variables for current email summary
+// Global variables for current email
 var length_ratio = 0.5;
+var email_id;
 var sentences_sorted;
 var sentence_index;
-var compressed_sentence_to_original;
+var processed_sentence_to_original;
+var email_body;
 
 // Initial check that jQuery and Gmail.js is loaded
 var checkLoaded = function() {
@@ -15,8 +17,8 @@ var checkLoaded = function() {
 
 // Main function for setup
 var uMailMain = function() {
-    gmail = Gmail();
-    gmail.observe.on("open_email", function(id) { emailOpened(id); });  
+  gmail = Gmail();
+  gmail.observe.on("open_email", function(id) { emailOpened(id); });  
 };
 
 // Callback for when an email is opened
@@ -31,6 +33,9 @@ var emailOpened = function(id) {
 
   // Send data to server on email load (rather than on button click) to reduce latency
   window.postMessage({type: 'new_email_request', data: dataString}, '*');
+
+  // Record email ID as a global variable
+  email_id = id;
 
   // Add Summarize button to email view toolbar
   addUMailButton();
@@ -59,7 +64,7 @@ var addUMailButton = function() {
     'img/iconToolbar.png" style="position: relative;top: 4px;"> Summarize</div>');
 
   button.click(function() {
-    console.log("yes");
+    displaySummary();
   });
 
   var content = $(document.createElement('div'));
@@ -69,14 +74,50 @@ var addUMailButton = function() {
   toolbar.append(buttonContainer);
 }
 
+// Display summary for current email
+var displaySummary = function() {
+  // Take # num_sentences of the most important sentences, 
+  // keeping track of index in original email
+  var num_sentences = sentences_sorted.length * length_ratio;
+  var summary = [];
+  for (var i = 0; i < num_sentences; i++)  {
+    var current_sentence = sentences_sorted[i];
+    summary.push({
+                  'sent': current_sentence,
+                  'index': sentence_index[processed_sentence_to_original[current_sentence]]
+                });
+  }
+  var summary = sortByKey(summary, 'index');
+
+  // Turn this summary array into a string
+  var summaryStr = '';
+  for (var i = 0; i < summary.length; i++) {
+    summaryStr += summary[i]['sent'] + ' ';
+  }
+
+  // Display summary on page
+  var emailElement = new gmail.dom.email(email_id);
+  emailElement.body(summaryStr);
+}
+
 // Message listeners for communication with content.js
 window.addEventListener('message', function(event) {
     // Listener for response from /new_email
     if (event.data.type == 'new_email_response') {
+        console.log(event.data.data)
         var summaryJSON = JSON.parse(event.data.data);
         sentences_sorted = summaryJSON['sent_sorted'];
-        sentences_index = summaryJSON['sent_index'];
+        sentence_index = summaryJSON['sent_index'];
+        processed_sentence_to_original = summaryJSON['processed_sent_to_original'];
     }
 });
+
+// Utility function to sort a array of objects by a key
+function sortByKey(array, key) {
+    return array.sort(function(a, b) {
+        var x = a[key]; var y = b[key];
+        return ((x < y) ? -1 : ((x > y) ? 1 : 0));
+    });
+}
 
 checkLoaded();
