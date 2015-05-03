@@ -9,11 +9,9 @@ import os
 import re
 
 from scipy.spatial import distance
-from external_modules import inflect
 from sklearn import ensemble
 from sklearn.externals import joblib
-
-import helpers
+from nltk.stem.snowball import SnowballStemmer
 
 def get_threads_in_root(root):
     '''Takes the root of an ElementTree return a list of threads (ET.Element).'''
@@ -99,11 +97,10 @@ def clean_up_words(word_list):
     for i in range(len(clean_word_list)):
         clean_word_list[i] = ''.join([t for t in clean_word_list[i] if (t in '1234567890' or t in string.ascii_lowercase)])
 
-    # Make singular
-    inflect_engine = inflect.engine()
+    # Make into stem words
+    stemmer = SnowballStemmer("english")
     for i in range(len(clean_word_list)):
-        if inflect_engine.singular_noun(clean_word_list[i]) != False:
-                clean_word_list[i] = inflect_engine.singular_noun(clean_word_list[i])
+        clean_word_list[i] = stemmer.stem(clean_word_list[i])
 
     return clean_word_list
 
@@ -328,52 +325,11 @@ def vectorize_bc3_corpus():
 
     print("Finished getting word counts for each thread")
 
-    # Calculate vocab list for entire corpus
-    # This is needed for the tf-idf vectors, see function for more details
-    vocab_list, vocab_list_set = [], set()
-    for thread in root:
-        thread_vocab_list = clean_up_words(get_words_in_thread(thread))
-        for item in thread_vocab_list:
-            if item not in vocab_list_set:
-                vocab_list.append(item)
-                vocab_list_set.add(item)
-    vocab_list_index = {word: index for index, word in enumerate(vocab_list)}
-
-    # Save latest word list to bc3_vocab_data.py
-    helpers.write_bc3_vocab_data(vocab_list, vocab_list_index)
+    # Load bc3 vocab list variables from helper_variables.py
+    from data.helper_variables import bc3_vocab_list as vocab_list
+    from data.helper_variables import bc3_vocab_list_index as vocab_list_index
 
     print("Finished constructing vocab list")
-
-    # Calculate and cache all tf_idf vectors, in {sentence: tf-idf vector}
-    # cached_tf_idf_vectors, cached_tf_local_idf_vectors = dict(), dict()
-    # for thread_index in range(len(root)):
-    #         # Get tf-idf vector for each sentence in this thread
-    #         thread = root[thread_index]
-    #         thread_sentences = get_sentences_in_thread(thread)
-    #         for sentence in thread_sentences:
-    #                 # Get the key for the sentence as thread_id-sentence_id
-    #                 thread_id = thread[1].text
-    #                 sentence_id = sentence.attrib['id']
-    #                 sentence_key = thread_id + '-' + sentence_id
-
-    #                 tf_idf_vector = get_tf_idf_vector(sentence, thread, root, word_counts_per_thread, vocab_list_index)
-    #                 cached_tf_idf_vectors[sentence_key] = tf_idf_vector
-    #                 tf_local_idf_vector = get_tf_local_idf_vector(sentence, thread, root, word_counts_per_thread, vocab_list_index)
-    #                 cached_tf_local_idf_vectors[sentence_key] = tf_local_idf_vector
-
-    #         print("Calculated tf-idf for thread %i" % thread_index)
-
-    # print("Finished pre-calculating tf-idf stuff")
-
-    # Pickle the tf-idf dictionaries
-    # tf_idf_file = open("data/bc3_tf_idf_vectors", "wb")
-    # pickle.dump(cached_tf_idf_vectors, tf_idf_file, protocol=2)
-    # tf_idf_file.close()
-    # tf_local_idf_file = open("data/bc3_tf_local_idf_vectors", "wb")
-    # pickle.dump(cached_tf_local_idf_vectors, tf_local_idf_file, protocol=2)
-    # tf_local_idf_file.close()
-
-    # print("Successfully pickled")
 
     # Load tf_idf vector from pickled cache {thread_id-sentence_id: tf_idf vector}
     tf_idf_file = open("data/bc3_tf_idf_vectors", "rb")
@@ -511,8 +467,3 @@ def train_classifier(aligned_sentence_vectors, aligned_scores):
     random_forest.fit(aligned_sentence_vectors, aligned_scores)
 
     return random_forest
-
-if __name__ == '__main__':
-    # Vectorize the BC3 corpus, and write to vectorized_bc3_data.py
-    sentence_vectors, scores = get_bc3_vectors_and_scores()
-    helpers.write_vectorized_bc3_data(sentence_vectors, scores)

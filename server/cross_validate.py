@@ -2,7 +2,6 @@ import xml.etree.ElementTree as ET
 import vectorize_bc3
 import copy
 from helpers import *
-from data.helper_variables import *
 
 def recall_score_thread(ideal_summary, predicted_summary, thread_listno):
     '''Return the recall score for the <thread> that has thread_listno.'''
@@ -52,7 +51,7 @@ def create_valid_train_set(bc3_vector_dict, bc3_score_dict, train_listnos, valid
 
     return train_vectors, train_scores, valid_vectors, valid_scores
 
-def update_predicted_sent_scores(predicted_sent_scores, valid_predicted_scores, valid_listnos): 
+def update_predicted_sent_scores(predicted_sent_scores, valid_predicted_scores, valid_listnos, num_sent_each_thread): 
     '''Update predicted_sent_scores with valid_predicted_scores after every validation run.'''
 
     for thread_listno in valid_listnos:
@@ -62,7 +61,7 @@ def update_predicted_sent_scores(predicted_sent_scores, valid_predicted_scores, 
             sentence_count += 1
             if sentence_count == num_sent_each_thread[thread_listno]: break
 
-def cross_validate(root_corpus, bc3_vector_dict, bc3_score_dict, ideal_summaries):
+def cross_validate(root_corpus, bc3_vector_dict, bc3_score_dict, ideal_summaries, num_sent_each_thread, num_word_each_sent):
     '''Perform 10 fold cross validation. Will return the average weighted recall score for all the validation sets.'''
 
     # predicted_sent_scores contains the predicted score of each sentence after 10 fold cross validation
@@ -85,7 +84,7 @@ def cross_validate(root_corpus, bc3_vector_dict, bc3_score_dict, ideal_summaries
         valid_predicted_scores = [float(random_forest.predict(sentence)) for sentence in valid_vectors]
 
         # update_predicted_sent_scores updates the predicted_sent_scores with the predicted score of the sentence in a validation set
-        update_predicted_sent_scores(predicted_sent_scores, valid_predicted_scores, valid_listnos)
+        update_predicted_sent_scores(predicted_sent_scores, valid_predicted_scores, valid_listnos, num_sent_each_thread)
 
    
     # Get the summaries for each thread in the same dictionary structure
@@ -109,14 +108,12 @@ if __name__ == '__main__':
     root_annotation = ET.parse("bc3_corpus/bc3corpus.1.0/annotation.xml").getroot()
     root_corpus = ET.parse("bc3_corpus/bc3corpus.1.0/corpus.xml").getroot()
 
-    num_word_each_sent = return_num_word_each_sent(root_corpus)
-    anno_score_sent = return_anno_score_sent(root_annotation, num_word_each_sent)
-    num_sent_each_thread = return_num_sent_each_thread(root_corpus)
-    bc3_vector_dict = return_bc3_vector_dict(root_corpus, num_word_each_sent, sentence_vectors)
-    bc3_score_dict = return_bc3_score_dict(root_corpus, num_word_each_sent, scores)
-    ideal_summaries = return_ideal_summaries(anno_score_sent, num_word_each_sent)
+    # Import precalculated variables for bc3 corpus
+    from data.helper_variables import bc3_vector_dict, bc3_score_dict, ideal_summaries
+    from data.helper_variables import num_sent_each_thread, num_word_each_sent
 
     # Calculate and print out recall several times
     for i in range(100):
-        recall = cross_validate(root_corpus, bc3_vector_dict, bc3_score_dict, ideal_summaries)
+        recall = cross_validate(root_corpus, bc3_vector_dict, bc3_score_dict, 
+                 ideal_summaries, num_sent_each_thread, num_word_each_sent)
         print(recall)

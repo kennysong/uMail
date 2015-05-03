@@ -2,8 +2,6 @@ import xml.etree.ElementTree as ET
 import operator
 import cPickle as pickle
 import copy
-from data.vectorized_bc3_data import *
-from vectorize_bc3 import *
 
 def thread_listno_of_current_thread(thread):
     '''Get thread_listno of current thread.'''
@@ -23,22 +21,6 @@ def pickle_load(file_name):
     data_location = "data/" + file_name + ".pck"
     f = open(data_location, "r")
     return pickle.load(f)
-
-def write_bc3_vocab_data(vocab_list, vocab_list_index):
-    '''Writes vocab_list and vocab_list_index to bc3_vocab_data.py.'''
-    f = open('data/bc3_vocab_data.py', 'w')
-    f.write('# Words in BC3 corpus\n\n')
-    f.write('vocab_list = ' + str(vocab_list) + '\n')
-    f.write('vocab_list_index = ' + str(vocab_list_index) + '\n')
-    f.close()
-
-def write_vectorized_bc3_data(sentence_vectors, scores):
-    '''Writes sentence_vectors and scores to vectorized_bc3_data.py.'''
-    f = open('data/vectorized_bc3_data.py', 'w')
-    f.write('# BC3 corpus as sentence vectors with their respective scores\n\n')
-    f.write('scores = ' + str(scores) + '\n')
-    f.write('sentence_vectors = ' + str(sentence_vectors) + '\n')
-    f.close()
 
 def merge_two_dicts(x, y):
     '''Given two dicts, merge them into a new dict as a deep copy.'''
@@ -233,18 +215,22 @@ def save_variable(variable, variable_name = str):
 
     f = open("data/helper_variables.py", "a")
 
-    f. write(variable_name + " = " + repr(variable) + "\n" +"\n")
+    f.write(variable_name + " = " + repr(variable) + "\n" +"\n")
 
     f.close()
 
-if __name__ == '__main__':
+def save_cross_validation_variables():
+    '''Saves all variables needed in cross_validation.py to helper_variables.py 
+       and pickles.'''
     tree = ET.parse("bc3_corpus/bc3corpus.1.0/annotation.xml")
     root_annotation = tree.getroot()
 
     tree = ET.parse("bc3_corpus/bc3corpus.1.0/corpus.xml")
     root_corpus = tree.getroot()
 
-    clear_helper_variables()
+    # Vectorize the bc3 corpus
+    from vectorize_bc3 import get_bc3_vectors_and_scores
+    sentence_vectors, scores = get_bc3_vectors_and_scores()
 
     # num_word_each_sent is the number of words in each sentence
     num_word_each_sent = return_num_word_each_sent(root_corpus)
@@ -267,8 +253,99 @@ if __name__ == '__main__':
     save_variable(bc3_score_dict, "bc3_score_dict")
 
     # Train classifier on full BC3 corpus and return the trained classifier 
+    from vectorize_bc3 import train_classifier
     random_forest_full = train_classifier(sentence_vectors, scores)
     pickle_data(random_forest_full, "random_forest_full")
 
     # Dictionary of ideal summaries weighted across 3 annotators
     ideal_summaries = return_ideal_summaries(anno_score_sent, num_word_each_sent)
+    save_variable(ideal_summaries, 'ideal_summaries')
+
+def save_vectorize_bc3_variables():
+    '''Saves all variables needed in vectorize_bc3.py to helper_variables.py
+       and pickles.'''
+
+    # Import some helper functions from vectorize_bc3.py
+    from vectorize_bc3 import clean_up_words, get_words_in_thread
+
+    # Calculate vocab list for entire corpus
+    # This is needed for the tf-idf vectors, see function for more details
+    tree = ET.parse('bc3_corpus/bc3corpus.1.0/corpus.xml')
+    root = tree.getroot()
+
+    vocab_list, vocab_list_set = [], set()
+    for thread in root:
+        thread_vocab_list = clean_up_words(get_words_in_thread(thread))
+        for item in thread_vocab_list:
+            if item not in vocab_list_set:
+                vocab_list.append(item)
+                vocab_list_set.add(item)
+    vocab_list_index = {word: index for index, word in enumerate(vocab_list)}
+
+    save_variable(vocab_list, 'bc3_vocab_list')
+    save_variable(vocab_list_index, 'bc3_vocab_list_index')
+
+    ## Uncomment this to recalculate the tf_idf vector pickle cache (takes 4-5 hours)
+    # # Calculate and cache all tf_idf vectors, in {sentence: tf-idf vector}
+    # cached_tf_idf_vectors, cached_tf_local_idf_vectors = dict(), dict()
+    # for thread_index in range(len(root)):
+    #         # Get tf-idf vector for each sentence in this thread
+    #         thread = root[thread_index]
+    #         thread_sentences = get_sentences_in_thread(thread)
+    #         for sentence in thread_sentences:
+    #                 # Get the key for the sentence as thread_id-sentence_id
+    #                 thread_id = thread[1].text
+    #                 sentence_id = sentence.attrib['id']
+    #                 sentence_key = thread_id + '-' + sentence_id
+
+    #                 tf_idf_vector = get_tf_idf_vector(sentence, thread, root, word_counts_per_thread, vocab_list_index)
+    #                 cached_tf_idf_vectors[sentence_key] = tf_idf_vector
+    #                 tf_local_idf_vector = get_tf_local_idf_vector(sentence, thread, root, word_counts_per_thread, vocab_list_index)
+    #                 cached_tf_local_idf_vectors[sentence_key] = tf_local_idf_vector
+
+    #         print("Calculated tf-idf for thread %i" % thread_index)
+
+    # # Pickle the tf-idf dictionaries
+    # tf_idf_file = open("data/bc3_tf_idf_vectors", "wb")
+    # pickle.dump(cached_tf_idf_vectors, tf_idf_file, protocol=2)
+    # tf_idf_file.close()
+    # tf_local_idf_file = open("data/bc3_tf_local_idf_vectors", "wb")
+    # pickle.dump(cached_tf_local_idf_vectors, tf_local_idf_file, protocol=2)
+    # tf_local_idf_file.close()
+
+    # print("Successfully pickled tf-idf")
+
+def save_vectorize_email_variables():
+    '''Saves all variables needed in vectorize_email.py to helper_variables.py'''
+
+    # Import some helper functions from vectorize_bc3.py
+    from vectorize_bc3 import get_threads_in_root, clean_up_words, get_bc3_vectors_and_scores, get_words_in_thread
+
+    # Calculate words in each thread, save to threads_words.py
+    tree = ET.parse('bc3_corpus/bc3corpus.1.0/corpus.xml')
+    root_corpus = tree.getroot()
+    threads = get_threads_in_root(root_corpus)
+    threads_words = [set(clean_up_words(get_words_in_thread(thread))) for thread in threads]
+    save_variable(threads_words, 'bc3_threads_words')
+
+    # Vectorize the BC3 corpus, and write to vectorized_bc3_data.py
+    sentence_vectors, scores = get_bc3_vectors_and_scores()
+    save_variable(sentence_vectors, 'bc3_sentence_vectors')
+    save_variable(scores, 'bc3_scores')
+
+def save_all_variables():
+    '''Recalculates and saves all variables needed in cross_validation.py, 
+       vectorize_bc3.py, vectorize_email.py in helper_variables.py and pickles.
+       Do not change the order!'''
+
+    # Empty the helpers_variables.py file
+    clear_helper_variables()
+
+    # Start re-writing variables to helpers_variables.py (and pickles)
+    print('In save_vectorize_bc3_variables()')
+    save_vectorize_bc3_variables()
+    print('In save_cross_validation_variables()')
+    save_cross_validation_variables()
+    print('In save_vectorize_email_variables()')
+    save_vectorize_email_variables()
+    print("Completed save_all_variables().")

@@ -12,6 +12,10 @@ def hello():
 
 @app.route('/new_email', methods=['POST'])
 def new_email():
+    subject = request.form['subject']
+    email_text = request.form['email']
+    to = request.form['to']
+    cc = request.form['cc']
     return request.form['subject']
 
 if __name__ == "__main__":
