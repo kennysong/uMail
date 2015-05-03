@@ -352,8 +352,6 @@ def save_all_variables():
     print('In save_vectorize_email_variables()')
     save_vectorize_email_variables()
     print("Completed save_all_variables().")
-<<<<<<< HEAD
-=======
 
 def remove_adverb(string):
     "Take in a string, remove adverbs from the strings, return the strings without adverbs"
@@ -374,4 +372,3 @@ def remove_adverb(string):
     string = regex.sub("", string)
 
     return string
->>>>>>> 868964727badf72189c6ee922e3ef93e70b3de79
