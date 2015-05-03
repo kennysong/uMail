@@ -1,6 +1,12 @@
 // Global Gmail.js object
 var gmail;
 
+// Global variables for current email summary
+var length_ratio = 0.5;
+var sentences_sorted;
+var sentence_index;
+var compressed_sentence_to_original;
+
 // Initial check that jQuery and Gmail.js is loaded
 var checkLoaded = function() {
   if(window.jQuery && window.Gmail) { uMailMain(); } 
@@ -67,7 +73,9 @@ var addUMailButton = function() {
 window.addEventListener('message', function(event) {
     // Listener for response from /new_email
     if (event.data.type == 'new_email_response') {
-        console.log(event.data.data);
+        var summaryJSON = JSON.parse(event.data.data);
+        sentences_sorted = summaryJSON['sent_sorted'];
+        sentences_index = summaryJSON['sent_index'];
     }
 });
 
