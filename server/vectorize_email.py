@@ -140,8 +140,11 @@ def sent_order(sentences):
 
     return sent_index
 
-def process_email(random_forest_full, email_message, title, to_cc):
+def process_email(email_message, title, to_cc):
     "Output a list of sentences sorted by importance and a diciontary of the order of the sentences"
+
+    # Output a list of sentences sorted by importance and a diciontary of the order of the sentences
+    random_forest_full = pickle_load("random_forest_full")
 
     sent_vectors = vectorize_email(email_message, title, to_cc)
     sentences = bc3.get_sentences_in_email(email_message)
@@ -154,10 +157,7 @@ if __name__ == '__main__':
     to_cc = "NYU Shanghai Students CO17 <nyushanghai-students-co17-group@nyu.edu>, NYU Shanghai Students CO18 <nyushanghai-students-co18-group@nyu.edu>"
     email_message = "My fellow students. A belated Happy New Year and warm wishes for the rest of the semester ahead. Our time here at NYU Shanghai is flying by swiftly and I am excited to announce we are approaching the election season of the 2015-2016 Student Government at NYU Shanghai. I would like to invite you to our Elections Informational Meeting on March 5th, during the 12:30-1:45 lunch hour (room TBD) for an extremely important and insightful chance to learn about the upcoming elections. At this meeting, the Student Government and the Elections Board will be present to provide information and answer questions about the election timeline, candidacy, and campaign rules and regulations. For those interested in running for an elected position, you are highly encouraged to attend for your own benefit. This year's elections will be notably different from previous elections as the current Executive Board has been working determinedly to revise the Student Constitution and structure of Student Government to reflect a more efficient,  inclusive, and precise organizational structure that will better suit the needs of the Student Body and Student Governments of the future. We invite you all to read through the 2015 Constitutional Revisions and note the changes from the Original Constitution. You will find the differences to be at once significant, but nuanced. The Student Constitution will be open to you for comment until March 5. After you review the Constitution, please vote to ratify the revisions here on OrgSync. If you have comments on the Constitution, please email shanghai.student.government@nyu.edu. Please RSVP here if you plan to attend the Elections Informational Meeting. Please see below to read the 2015 Constitutional Revisions. Student Constitution 2015-2016. If you wish to read the Original Constitution, see below. Student Government is the heart of student interests and activity at NYU Shanghai and the Student Constitution gives life to the Student Government. If you are passionate about enhancing the student experience and community spirit at NYU Shanghai, I encourage you to read the Constitution, understand it, and run for Student Government."
 
-    # Output a list of sentences sorted by importance and a diciontary of the order of the sentences
-    random_forest_full = pickle_load("random_forest_full")
-
-    sent_sorted, sent_index = process_email(random_forest_full, email_message, title, to_cc)
+    sent_sorted, sent_index = process_email(email_message, title, to_cc)
 
     print(sent_sorted)
     print(sent_index)
