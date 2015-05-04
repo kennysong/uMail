@@ -8,6 +8,7 @@ var sentences_sorted;
 var sentence_index;
 var processed_sentence_to_original;
 var email_body;
+var ss;
 
 // Initial check that jQuery and Gmail.js is loaded
 var checkLoaded = function() {
@@ -26,7 +27,14 @@ var emailOpened = function(id) {
   // Get email data of first email in thread
   var emailData = gmail.get.email_data(id);
   var firstEmail = emailData.threads[id]; // ID of thread == ID of first email
-  var dataString = "email=" + encodeURIComponent(firstEmail.content_plain) +
+
+  // Remove all HTML tags, but keep newlines 
+  var emailHTML = firstEmail.content_html;
+  emailHTML = emailHTML.replace(/<br ?\\?>|<\/div>|<\/p>/g, "\n")
+  emailHTML = emailHTML.replace(/<(?:"[^"]*"['"]*|'[^']*'['"]*|[^'">])+>/g, ""); // Wow!
+
+  // Convert into a query string to POST to server
+  var dataString = "email=" + encodeURIComponent(emailHTML) +
                    "&subject=" + encodeURIComponent(firstEmail.subject) +
                    "&to=" + encodeURIComponent(firstEmail.to) +
                    "&cc=" + encodeURIComponent(firstEmail.cc);
@@ -89,10 +97,12 @@ var displaySummary = function() {
   }
   var summary = sortByKey(summary, 'index');
 
-  // Turn this summary array into a string
+  // Turn this summary array into a string, replacing \n with <br>
   var summaryStr = '';
   for (var i = 0; i < summary.length; i++) {
-    summaryStr += summary[i]['sent'] + ' ';
+    var current_sentence = summary[i]['sent'];
+    current_sentence = current_sentence.replace(/\n/g, "<br>");
+    summaryStr += current_sentence + ' ';
   }
 
   // Display summary on page
@@ -100,7 +110,15 @@ var displaySummary = function() {
   emailElement.body(summaryStr);
 }
 
-// Message listeners for communication with content.js
+// Utility function to sort a array of objects by a key
+function sortByKey(array, key) {
+    return array.sort(function(a, b) {
+        var x = a[key]; var y = b[key];
+        return ((x < y) ? -1 : ((x > y) ? 1 : 0));
+    });
+}
+
+// Add a message listener for communication with content.js
 window.addEventListener('message', function(event) {
     // Listener for response from /new_email
     if (event.data.type == 'new_email_response') {
@@ -112,12 +130,5 @@ window.addEventListener('message', function(event) {
     }
 });
 
-// Utility function to sort a array of objects by a key
-function sortByKey(array, key) {
-    return array.sort(function(a, b) {
-        var x = a[key]; var y = b[key];
-        return ((x < y) ? -1 : ((x > y) ? 1 : 0));
-    });
-}
-
+// Get ready to call uMailMain()
 checkLoaded();

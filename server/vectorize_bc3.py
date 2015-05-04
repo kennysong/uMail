@@ -57,18 +57,18 @@ def get_sentences_in_email(email):
         return list(text_tag)
     else:
         # If email is a string, return list of sentence strings with punctuation at the end
-        sentences_and_punctuation = re.split('([.?!](?![a-zA-Z]))', email)
+        sentences_and_punctuation = re.split('([^a-zA-Z0-9][.?!]|[.?!][^a-zA-Z0-9]|\n)', email)
         sentences = []
         for i in range(len(sentences_and_punctuation)):
-            if sentences_and_punctuation[i] in '.?!' and len(sentences) != 0:
-                # Add punctuation to previous sentence
+            if sentences_and_punctuation[i] in '.?! . ? ! \n' and len(sentences) != 0:
+                # Append all trailing punctuation to previous sentence
                 sentences[len(sentences) - 1] += sentences_and_punctuation[i]
             else:
                 # Append a new sentence to the list
                 sentences.append(sentences_and_punctuation[i])
 
         # Strip whitespace from beginning and end of sentence
-        sentences = [sent.strip() for sent in sentences]
+        sentences = [sent.strip(' ') for sent in sentences]
 
         return sentences
 
