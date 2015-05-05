@@ -448,7 +448,7 @@ def vectorize_sentence(sentence, index, email, subject, num_recipients,
     # Put all of these features into a vector
     sentence_vector = np.array([thread_line_number, rel_position_in_thread, centroid_similarity,
                       local_centroid_similarity, length, tf_idf_sum, tf_idf_avg, is_question,
-                      email_number, rel_position_in_email, subject_similarity, num_recipients, date_time, email_exist])
+                      email_number, rel_position_in_email, subject_similarity, num_recipients, date_time, date_time, date_time, date_time, date_time, date_time, date_time, date_time, email_exist])
 
     # Change NaN features to 0
     # This happens because one of the tf-idf vectors is all zero, because the
@@ -476,10 +476,10 @@ def get_bc3_vectors_and_scores():
 
     return aligned_sentence_vectors, aligned_scores
 
-def train_classifier(aligned_sentence_vectors, aligned_scores):
+def train_classifier(sent_vectors, sent_scores):
     '''Trains a classifier, returns RandomForest object.'''
     random_forest = ensemble.RandomForestRegressor()
-    random_forest.fit(aligned_sentence_vectors, aligned_scores)
+    random_forest.fit(sent_vectors, sent_scores)
 
     return random_forest
 

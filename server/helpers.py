@@ -6,6 +6,7 @@ import os
 import nltk
 import re
 from dateutil import parser
+from sklearn import ensemble
 import datetime
 
 def thread_listno_of_current_thread(thread):
@@ -162,7 +163,6 @@ def return_bc3_vector_dict(root_corpus, num_word_each_sent, sentence_vectors):
 def return_bc3_score_dict(root_corpus, num_word_each_sent, scores):
     "Return the score of the vectorized sentence in bc3 in dictionary form"
 
-    # Qns to clarify: where did we get these scores from ? 
     # Copy the structure of num_word_each_sent
     bc3_score_dict = copy.deepcopy(num_word_each_sent)
 
@@ -179,27 +179,27 @@ def return_bc3_score_dict(root_corpus, num_word_each_sent, scores):
 def sort_dict_by_value(dict):
     '''Sort a dictionary by values in descending order and turn into a tuple.'''
     dict_sorted = sorted(dict.items(), key=operator.itemgetter(1), reverse = True)
+
     return dict_sorted
 
-def get_thread_summary(thread_listno, sentence_scores, num_word_each_sent):
-    '''Return summary of a thread with the length limit, as a list of sentence IDs.'''
+def get_thread_summary(thread_listno, sent_scores, num_word_each_sent):
+    '''Return summary of a thread based on sent_scores with the length limit, as a list of sentence IDs.'''
 
     # length_limit is the length limit of ideal summary - 30% of original email by word count
-    length_limit = sum(num_word_each_sent[thread_listno].values())/100*30
+    length_limit = float(sum(num_word_each_sent[thread_listno].values())/100*30)
 
-    # Sort each sentence in a <thread> according to annotation score
-    sent_sorted_by_importance = sort_dict_by_value(sentence_scores[thread_listno])
+    # Sort each sentence in a <thread> according to annotation score in descending order
+    sent_sorted_by_importance = sort_dict_by_value(sent_scores[thread_listno])
 
     summary_word_count = 0
     summary = []
 
     for sent in sent_sorted_by_importance:
         summary.append(sent[0])
-        summary_word_count += summary_word_count + num_word_each_sent[thread_listno][sent[0]]
+        summary_word_count +=  num_word_each_sent[thread_listno][sent[0]]
         if summary_word_count >= length_limit:
             break
 
-    summary = sorted(summary)
     return summary
 
 def return_ideal_summaries(anno_score_sent, num_word_each_sent):
@@ -391,6 +391,7 @@ def detect_date_time(string):
                     pass
         except IndexError: 
             return True
+
     #default is set to datetime.datetime.utcnow below because of the way the class parser works. 
     #It returns the default time (curente date 00:00:00) if there is no date and time in the string
     #This is bad if we have if the user chooses to summarize an email that contains the date
@@ -419,5 +420,14 @@ def detect_email(string):
 
     return False
 
+def train_classifier(sent_vectors, sent_scores):
+    '''Trains a classifier, returns RandomForest object.'''
+    random_forest = ensemble.RandomForestRegressor()
+    random_forest.fit(sent_vectors, sent_scores)
+
+    return random_forest
+
 if __name__ == '__main__':
-    save_all_variables()
+    # save_all_variables()
+    a = detect_date_time("Charles McCathieNevile mailto:charles@w3.org phone: +61 (0) 409 134 136")
+    print a
