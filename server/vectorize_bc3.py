@@ -12,6 +12,7 @@ from scipy.spatial import distance
 from sklearn import ensemble
 from sklearn.externals import joblib
 from nltk.stem.snowball import SnowballStemmer
+from helpers import *
 
 def get_threads_in_root(root):
     '''Takes the root of an ElementTree return a list of threads (ET.Element).'''
@@ -438,10 +439,15 @@ def vectorize_sentence(sentence, index, email, subject, num_recipients,
     centroid_similarity = 1 - distance.cosine(tf_idf_vector, centroid_vector)
     local_centroid_similarity = 1 - distance.cosine(tf_local_idf_vector, local_centroid_vector)
 
+    #Custom features: detect if there is a date or time or both in sentence
+    date_time = detect_date_time(sentence)
+     
+    # Remember to add date_time into the sentence_vector below
+
     # Put all of these features into a vector
     sentence_vector = np.array([thread_line_number, rel_position_in_thread, centroid_similarity,
                       local_centroid_similarity, length, tf_idf_sum, tf_idf_avg, is_question,
-                      email_number, rel_position_in_email, subject_similarity, num_recipients])
+                      email_number, rel_position_in_email, subject_similarity, num_recipients, date_time])
 
     # Change NaN features to 0
     # This happens because one of the tf-idf vectors is all zero, because the
@@ -475,3 +481,6 @@ def train_classifier(aligned_sentence_vectors, aligned_scores):
     random_forest.fit(aligned_sentence_vectors, aligned_scores)
 
     return random_forest
+
+if __name__ == '__main__':
+    aligned_sentence_vectors, aligned_scores = get_bc3_vectors_and_scores()

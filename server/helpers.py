@@ -5,6 +5,8 @@ import copy
 import os
 import nltk
 import re
+from dateutil import parser
+import datetime
 
 def thread_listno_of_current_thread(thread):
     '''Get thread_listno of current thread.'''
@@ -372,3 +374,41 @@ def remove_adverb(string):
     string = regex.sub("", string)
 
     return string
+
+def detect_date_time(string):
+    "Return True if there is mention of days, date or time in a string"
+    import datetime
+    default =  datetime.datetime.utcnow()
+
+    #A hacky way of pre-processing the string: If the string contains 30-35 (dd-dd with dd>30), the dateutil parse will return an error.
+    for i in range(len(string)):
+        try:
+            if string[i] == "-":
+                try: 
+                    if int(string[i-2:i]) > 12 and int(string[i+1:i+3]) > 12:
+                        string = string.replace(string[i-2:i+1],"")
+                except ValueError: 
+                    pass
+        except IndexError: 
+            return True
+    #default is set to datetime.datetime.utcnow below because of the way the class parser works. 
+    #It returns the default time (curente date 00:00:00) if there is no date and time in the string
+    #This is bad if we have if the user chooses to summarize an email that contains the date
+    #in which the users choose to do so
+    try:
+        datetime = parser.parse(string, yearfirst = True, default = default, fuzzy = True)
+    except ValueError: 
+        pass
+
+    # print "datetime is " 
+    # print datetime
+    #need to have type error below because of the existence of sentence that include information about timezone in bc3 corpus
+    try:
+        if datetime == default: 
+            return False
+        else: 
+            return True
+    except TypeError: return True
+
+if __name__ == '__main__':
+    save_all_variables()
