@@ -410,5 +410,14 @@ def detect_date_time(string):
             return True
     except TypeError: return True
 
+def detect_email(string):
+    "Return True if there is an email in the string. False otherwise"
+
+    for i in range(len(string)):
+        if string[i] == "@":
+            return True
+
+    return False
+
 if __name__ == '__main__':
     save_all_variables()
