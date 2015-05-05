@@ -9,7 +9,6 @@ import os
 import re
 
 from scipy.spatial import distance
-from sklearn import ensemble
 from sklearn.externals import joblib
 from nltk.stem.snowball import SnowballStemmer
 from helpers import *
@@ -476,12 +475,6 @@ def get_bc3_vectors_and_scores():
 
     return aligned_sentence_vectors, aligned_scores
 
-def train_classifier(sent_vectors, sent_scores):
-    '''Trains a classifier, returns RandomForest object.'''
-    random_forest = ensemble.RandomForestRegressor()
-    random_forest.fit(sent_vectors, sent_scores)
-
-    return random_forest
 
 if __name__ == '__main__':
     aligned_sentence_vectors, aligned_scores = get_bc3_vectors_and_scores()
