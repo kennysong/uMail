@@ -8,7 +8,7 @@ var sentences_sorted;
 var sentence_index;
 var processed_sentence_to_original;
 var email_body;
-var ss;
+var summary_option = 'highlight';
 
 // Initial check that jQuery and Gmail.js is loaded
 var checkLoaded = function() {
@@ -97,17 +97,52 @@ var displaySummary = function() {
   }
   var summary = sortByKey(summary, 'index');
 
-  // Turn this summary array into a string, replacing \n with <br>
-  var summaryStr = '';
-  for (var i = 0; i < summary.length; i++) {
-    var current_sentence = summary[i]['sent'];
-    current_sentence = current_sentence.replace(/\n/g, "<br>");
-    summaryStr += current_sentence + ' ';
+  if (summary_option === 'replaceEmail') {
+    // Turn this summary array into a string, replacing \n with <br>
+    var emailHTML = '';
+    for (var i = 0; i < summary.length; i++) {
+      var current_sentence = summary[i]['sent'];
+      current_sentence = current_sentence.replace(/\n/g, "<br>");
+      emailHTML += current_sentence + ' ';
+    }
+
+  } else if (summary_option === 'highlight') {
+    // Get current email as HTML, but remove all HTML tags and make all newlines <br>
+    var emailHTML = gmail.get.email_data(email_id).threads[email_id].content_html;
+    emailHTML = emailHTML.replace(/<br ?\\?>|<\/div>|<\/p>/g, "{br}"); // Temporary marker for <br>
+    emailHTML = emailHTML.replace(/<(?:"[^"]*"['"]*|'[^']*'['"]*|[^'">])+>/g, ""); // Remove all HTML tags
+    emailHTML = emailHTML.replace(/{br}/g, "<br>"); // Change {br} back to <br>!
+
+    // Locate our top summary sentences within the original email
+    for (var i = 0; i < summary.length; i++) {
+      // Get the sentence as it was originally in the email, as plain text
+      var current_sentence = summary[i]['sent'];
+      var original_sentence = processed_sentence_to_original[current_sentence];
+      if (typeof original_sentence === 'undefined') { 
+        console.error('"' + original_sentence + '" not found in processed_sentence_to_original.');
+        continue; 
+      }
+
+      // Locate this sentence in the email HTML
+      var text_only_sentence = original_sentence.replace(/\n/g, "");
+      if (text_only_sentence.indexOf('community') != -1) { SENT = text_only_sentence; }
+      var start_index = emailHTML.indexOf(text_only_sentence);
+      if (start_index === -1) { 
+        console.error('"' + text_only_sentence + '" not found in the original email.');
+        continue;
+      }
+      var end_index = start_index + text_only_sentence.length;
+
+      // Wrap that sentence to highlight
+      emailHTML = emailHTML.substring(0, start_index) + '<span style="background:yellow">' 
+                  + emailHTML.substring(start_index, end_index) + '</span>'
+                  + emailHTML.substring(end_index);
+    }
   }
 
-  // Display summary on page
+  // Replace the email HTML with our own
   var emailElement = new gmail.dom.email(email_id);
-  emailElement.body(summaryStr);
+  emailElement.body(emailHTML);
 }
 
 // Utility function to sort a array of objects by a key

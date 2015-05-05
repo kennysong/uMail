@@ -25,7 +25,7 @@ window.addEventListener('message', function(event) {
         chrome.runtime.sendMessage({
             method: 'POST',
             action: 'xhttp',
-            url: 'http://52.6.28.16:8080/new_email',
+            url: 'http://52.6.28.16/new_email',
             data: event.data.data
         }, function(responseText) {
             window.postMessage({type: 'new_email_response', data: responseText}, '*');
