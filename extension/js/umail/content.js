@@ -18,17 +18,33 @@ var uMailURLTag = document.createElement('script');
 uMailURLTag.text = 'var uMailExtensionURL = "' + extensionURL + '";';
 (document.head || document.documentElement).appendChild(uMailURLTag);
 
-// Communication with the injected umail.js script
+// Listen to messages from the injected umail.js script
 window.addEventListener('message', function(event) {
+    // Message background.js to send a request to /new_email
     if (event.data.type == 'new_email_request') {
-        // Message background.js to send a request to /new_email
         chrome.runtime.sendMessage({
             method: 'POST',
             action: 'xhttp',
             url: 'http://52.6.28.16/new_email',
             data: event.data.data
         }, function(responseText) {
+            // Message umail.js with the /new_email response text
             window.postMessage({type: 'new_email_response', data: responseText}, '*');
         });
+
+    // Message background.js to get the summary variables 
+    } else if (event.data.type == 'request_summary_variables') {
+        chrome.runtime.sendMessage({ action: 'request_summary_variables' }, function(summary_variables) {
+            // Message umail.js with the summary variables
+            window.postMessage({type: 'summary_variables_response', data: summary_variables}, '*');
+        });
     }
+});
+
+// Listen for message from background.js
+chrome.runtime.onMessage.addListener(function(request, sender, callback) {
+    // Update summary variables in umail.js
+    if (request.action == "update_summary_variables") {
+        window.postMessage({type: 'update_summary_variables', data: request}, '*');
+    }  
 });

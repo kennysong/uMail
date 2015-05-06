@@ -24,16 +24,47 @@
       #settings {
         margin-top: 10px;
       }
+      .card {
+        height: 100%;
+        margin: 0; 
+        background-color: inherit; 
+        border-radius: 0; 
+      }
+      .settings-title {
+        font-size: 16px;
+        font-weight: 600;
+      }
     </style>
   </head>
   <body>
-      <img src="img/icon128.png">
-      <h1>Summarize your email.</h1>
-      <div>
-        <a class="waves-effect waves-light btn-large blue darken-1" href="http://gmail.com">Go to Gmail<i class="mdi-content-send right"></i></a>
-      </div>
-      <div id="settings">
-        <a class="waves-effect waves-light btn-large red darken-1">Settings</a>
+      <div class="card">
+        <img src="img/icon128.png">
+        <h1>Summarize your email.</h1>
+        <div>
+          <a class="waves-effect waves-light btn-large blue darken-1" href="http://gmail.com">Go to Gmail<i class="mdi-content-send right"></i></a>
+        </div>
+        <div id="settings">
+          <a class="waves-effect waves-light btn-large red darken-1 activator">Settings</a>
+        </div>
+        <div class="card-reveal">
+          <span class="card-title grey-text text-darken-4">
+            <span style="margin-left: 35px;">Settings</span>
+            <i class="mdi-navigation-close right"></i>
+          </span>
+          <hr/><br/>
+          <p class="settings-title">Summary Length (%)</p>
+          <p class="range-field">
+            <input type="range" id="length-ratio" min="1" max="100"/>
+          </p>
+          <p class="settings-title">Summary Type</p>
+          <p>
+            <input name="summary-type" type="radio" value="show-summary" id="show-summary"/>
+            <label for="show-summary">Show</label>
+            &nbsp;&nbsp;&nbsp;
+            <input name="summary-type" type="radio" value="highlight" id="highlight"/>
+            <label for="highlight">Highlight</label>
+          </p>
+        </div>
       </div>
   </body>
 </html>
