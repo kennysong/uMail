@@ -436,13 +436,13 @@ def detect_date_time(string):
     except TypeError: return True
 
 def detect_email(string):
-    "Return True if there is an email in the string. False otherwise"
+    "Return 1 if there is an email in the string. Return 0 otherwise"
 
     for i in range(len(string)):
         if string[i] == "@":
-            return True
+            return 1
 
-    return False
+    return 0
 
 def train_classifier(sent_vectors, sent_scores):
     '''Trains a classifier, returns RandomForest object.'''

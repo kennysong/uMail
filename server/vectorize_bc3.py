@@ -441,15 +441,17 @@ def vectorize_sentence(sentence, index, email, subject, num_recipients,
     local_centroid_similarity = 1 - distance.cosine(tf_local_idf_vector, local_centroid_vector)
 
     # Custom feature: detect if there is a date or time or both in sentence
-    date_time = helpers.detect_date_time(sentence)
+    has_date_time = helpers.detect_date_time(sentence)
      
-    # Custom feature: detect if there is an email in sentence
+    #Custom feature: detect if there is an email in sentence, scaled by length of sentence
     email_exist = helpers.detect_email(sentence)
+    email_exist = email_exist * len(sentence)
 
     # Put all of these features into a vector
     sentence_vector = np.array([thread_line_number, rel_position_in_thread, centroid_similarity,
                       local_centroid_similarity, length, tf_idf_sum, tf_idf_avg, is_question,
-                      email_number, rel_position_in_email, subject_similarity, num_recipients, date_time, date_time, date_time, date_time, date_time, date_time, date_time, date_time, email_exist])
+                      email_number, rel_position_in_email, subject_similarity, num_recipients, 
+                      has_date_time, email_exist])
 
     # Change NaN features to 0
     # This happens because one of the tf-idf vectors is all zero, because the
