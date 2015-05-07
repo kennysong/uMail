@@ -13,7 +13,7 @@ from sklearn.externals import joblib
 from nltk.stem.snowball import SnowballStemmer
 from helpers import *
 
-def get_threads_in_root(root):
+def get_threads_in_root(root): 
     '''Takes the root of an ElementTree return a list of threads (ET.Element).'''
     return list(root)
 
@@ -477,4 +477,6 @@ def get_bc3_vectors_and_scores():
 
 
 if __name__ == '__main__':
-    aligned_sentence_vectors, aligned_scores = get_bc3_vectors_and_scores()
+    # aligned_sentence_vectors, aligned_scores = get_bc3_vectors_and_scores()
+    tree_corpus = ET.parse(os.path.dirname(os.path.abspath(__file__)) + "/bc3_corpus/bc3corpus.1.0/corpus.xml")
+    root_corpus = tree_corpus.getroot()
