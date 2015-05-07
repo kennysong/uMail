@@ -443,11 +443,12 @@ def vectorize_sentence(sentence, index, email, subject, num_recipients,
      
     #Custom feature: detect if there is an email in sentence
     email_exist = detect_email(sentence)
+    email_exist = email_exist*len(sentence)
 
     # Put all of these features into a vector
     sentence_vector = np.array([thread_line_number, rel_position_in_thread, centroid_similarity,
                       local_centroid_similarity, length, tf_idf_sum, tf_idf_avg, is_question,
-                      email_number, rel_position_in_email, subject_similarity, num_recipients, date_time, date_time, date_time, date_time, date_time, date_time, date_time, date_time, email_exist])
+                      email_number, rel_position_in_email, subject_similarity, num_recipients, date_time, email_exist])
 
     # Change NaN features to 0
     # This happens because one of the tf-idf vectors is all zero, because the
@@ -477,6 +478,4 @@ def get_bc3_vectors_and_scores():
 
 
 if __name__ == '__main__':
-    # aligned_sentence_vectors, aligned_scores = get_bc3_vectors_and_scores()
-    tree_corpus = ET.parse(os.path.dirname(os.path.abspath(__file__)) + "/bc3_corpus/bc3corpus.1.0/corpus.xml")
-    root_corpus = tree_corpus.getroot()
+    aligned_sentence_vectors, aligned_scores = get_bc3_vectors_and_scores()
