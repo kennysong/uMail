@@ -7,7 +7,6 @@ import re
 import vectorize_bc3 as bc3
 
 from scipy.spatial import distance
-from external_modules import inflect
 from helpers import *
 
 def get_tf_idf_vector(sentence, email, email_words, sentence_words, threads_words, bc3_threads, vocab_list_index):
