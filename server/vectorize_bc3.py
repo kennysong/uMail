@@ -8,10 +8,11 @@ import pickle
 import os
 import re
 
+import helpers
+
 from scipy.spatial import distance
 from sklearn.externals import joblib
 from nltk.stem.snowball import SnowballStemmer
-from helpers import *
 
 def get_threads_in_root(root): 
     '''Takes the root of an ElementTree return a list of threads (ET.Element).'''
@@ -311,7 +312,8 @@ def get_annotated_scores():
         for sentence in sentenceID_in_thread:
             score[thread[0].text][sentence] = sentenceID.count(sentence)
 
-    score = normalize_score(score)
+    # Note: currently disabling normalization of score to debug weighted recall!!
+    # score = normalize_score(score)
 
     return score
 
@@ -438,11 +440,11 @@ def vectorize_sentence(sentence, index, email, subject, num_recipients,
     centroid_similarity = 1 - distance.cosine(tf_idf_vector, centroid_vector)
     local_centroid_similarity = 1 - distance.cosine(tf_local_idf_vector, local_centroid_vector)
 
-    #Custom feature: detect if there is a date or time or both in sentence
-    date_time = detect_date_time(sentence)
+    # Custom feature: detect if there is a date or time or both in sentence
+    date_time = helpers.detect_date_time(sentence)
      
-    #Custom feature: detect if there is an email in sentence
-    email_exist = detect_email(sentence)
+    # Custom feature: detect if there is an email in sentence
+    email_exist = helpers.detect_email(sentence)
 
     # Put all of these features into a vector
     sentence_vector = np.array([thread_line_number, rel_position_in_thread, centroid_similarity,
@@ -477,6 +479,4 @@ def get_bc3_vectors_and_scores():
 
 
 if __name__ == '__main__':
-    # aligned_sentence_vectors, aligned_scores = get_bc3_vectors_and_scores()
-    tree_corpus = ET.parse(os.path.dirname(os.path.abspath(__file__)) + "/bc3_corpus/bc3corpus.1.0/corpus.xml")
-    root_corpus = tree_corpus.getroot()
+    aligned_sentence_vectors, aligned_scores = get_bc3_vectors_and_scores()

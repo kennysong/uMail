@@ -5,31 +5,39 @@ import copy
 import os
 import nltk
 import re
-from dateutil import parser
-from sklearn import ensemble
 import datetime
 
-def thread_listno_of_current_thread(thread):
-    '''Get thread_listno of current thread.'''
-    for listno in thread:
-        if listno.tag == "listno":
-            return listno.text
+import vectorize_bc3 as bc3
+
+from dateutil import parser
+from sklearn import ensemble
+
+def listno_of_thread(thread):
+    '''Get thread_listno of current thread.
+       Debugged by Kenny on May 8th.'''
+    for element in thread:
+        if element.tag == "listno": return element.text
 
 def pickle_data(data, file_name):
-    '''Pickle data into /data as file_name.pck.'''
+    '''Pickle data into /data as file_name.pck.
+       Debugged by Kenny on May 8th.'''
     data_location = os.path.dirname(os.path.abspath(__file__)) + "/data/" + file_name + ".pck"
     f = open(data_location, "w")
-    pickle.dump(data,f)
+    pickle.dump(data, f)
     f.close()
 
 def pickle_load(file_name):
-    '''Returns an unpickled object from file_name.pck.'''
+    '''Returns an unpickled object from file_name.pck.
+       Debugged by Kenny on May 8th.'''
     data_location = os.path.dirname(os.path.abspath(__file__)) + "/data/" + file_name + ".pck"
     f = open(data_location, "r")
-    return pickle.load(f)
+    loaded_data = pickle.load(f)
+    f.close()
+    return loaded_data
 
 def merge_two_dicts(x, y):
-    '''Given two dicts, merge them into a new dict as a deep copy.'''
+    '''Given two dicts, merge them into a new dict as a deep copy.
+       Debugged by Kenny on May 8th.'''
     z = copy.deepcopy(x)
     z.update(y)
     return z
@@ -78,43 +86,62 @@ def sent_ID_in_annotation(annotation):
 
     return annotation_ID
 
-def anno_sent_ID_in_thread(thread):
-    '''Return the annotation score of each sentence in a <thread> as a dictionary.'''
-    anno_sent_in_thread = dict()
-    for annotation in thread:
-        if annotation.tag == "annotation":
-            annotation_sent_ID = sent_ID_in_annotation(annotation)
-            for sent_ID in annotation_sent_ID:
-                if sent_ID in anno_sent_in_thread.keys():
-                    anno_sent_in_thread[sent_ID] += 1
-                else:
-                    anno_sent_in_thread[sent_ID] = 1
+def anno_scores_in_thread(thread):
+    '''Return the annotation score of each sentence in a <thread> as a dictionary.
+       Debugged by Kenny on May 8th.'''
+    anno_scores = dict()
+    for element in thread:
+        if element.tag == "annotation":
+            annotation_sent_IDs = sent_ID_in_annotation(element)
+            for sent_ID in annotation_sent_IDs:
+                if sent_ID in anno_scores: anno_scores[sent_ID] += 1
+                else: anno_scores[sent_ID] = 1
 
-    return anno_sent_in_thread
+    return anno_scores
+
+def empty_bc3_structure_dict():
+    '''Returns a dictionary that models the BC3 data structure:
+       {thread_listno: {sentence_id: None, sentence_id2: None, ...}, ...}'''
+
+    # Iterate through each thread
+    bc3_structure_dict = dict()
+    root_corpus = ET.parse(os.path.dirname(os.path.abspath(__file__)) + '/bc3_corpus/bc3corpus.1.0/corpus.xml').getroot()
+    for thread in root_corpus:
+        # Iterate through each sentence in the thread
+        sentences = bc3.get_sentences_in_thread(thread)
+        sentence_dict = {sentence.attrib['id']: None for sentence in sentences}
+        thread_listno = listno_of_thread(thread)
+        bc3_structure_dict[thread_listno] = sentence_dict
+
+    return bc3_structure_dict
 
 def return_num_word_each_sent(root_corpus):
     "Return number of word in each sentence in corpus in dictionary form"
     num_word_each_sent = dict()
 
     for thread in root_corpus:
-        thread_listno = thread_listno_of_current_thread(thread)
+        thread_listno = listno_of_thread(thread)
         num_word_each_sent[thread_listno] = num_word_each_sent_thread(thread)
 
     return num_word_each_sent
 
-def return_anno_score_sent(root_annotation, num_word_each_sent):
-    "Return the annotation score of each sentence in corpus (normalized)"
-    anno_score_sent = dict()
+def return_anno_sent_scores(annotation_root, num_word_each_sent):
+    '''Return the annotation score of each sentence in corpus (currently not normalized!).
+       Debugged by Kenny on May 8th.'''
 
-    for thread in root_annotation:
-        thread_listno = thread_listno_of_current_thread(thread)
-        anno_score_sent[thread_listno] = anno_sent_ID_in_thread(thread)
+    # Get the annotated score for each sentence in the corpus
+    anno_sent_scores = dict()
+    for thread in annotation_root:
+        thread_listno = listno_of_thread(thread)
+        anno_sent_scores[thread_listno] = anno_scores_in_thread(thread)
 
-    for thread_listno in anno_score_sent:
-        for sent_ID in anno_score_sent[thread_listno]:
-            anno_score_sent[thread_listno][sent_ID] = anno_score_sent[thread_listno][sent_ID] / num_word_each_sent[thread_listno][sent_ID]
+    # Normalize these annotated scores
+    # Note: currently disabling normalization of score to debug weighted recall!!
+    # for thread_listno in anno_sent_scores:
+    #     for sent_ID in anno_sent_scores[thread_listno]:
+    #         anno_sent_scores[thread_listno][sent_ID] = anno_sent_scores[thread_listno][sent_ID] / num_word_each_sent[thread_listno][sent_ID]
 
-    return anno_score_sent
+    return anno_sent_scores
 
 def num_sent_in_text(text):
     "return the number of sentence in a <text>"
@@ -139,7 +166,7 @@ def return_num_sent_each_thread(root_corpus):
     num_sent_each_thread = dict()
 
     for thread in root_corpus:
-        thread_listno = thread_listno_of_current_thread(thread)
+        thread_listno = listno_of_thread(thread)
         num_sent_each_thread[thread_listno] = num_sent_in_thread(thread)
 
     return num_sent_each_thread
@@ -147,13 +174,11 @@ def return_num_sent_each_thread(root_corpus):
 def return_bc3_vector_dict(root_corpus, num_word_each_sent, sentence_vectors):
     "return the vectorized sentence in bc3 in dictionary form"
 
-    # Copy the structure of num_word_each_sent
-    bc3_vector_dict = copy.deepcopy(num_word_each_sent)
-
+    bc3_vector_dict = empty_bc3_structure_dict()
     current_sentence = 0
 
     for thread in root_corpus:
-        thread_listno = thread_listno_of_current_thread(thread)
+        thread_listno = listno_of_thread(thread)
         for sent_ID in sorted(bc3_vector_dict[thread_listno].keys()):
             bc3_vector_dict[thread_listno][sent_ID] = sentence_vectors[current_sentence]
             current_sentence += 1
@@ -163,13 +188,11 @@ def return_bc3_vector_dict(root_corpus, num_word_each_sent, sentence_vectors):
 def return_bc3_score_dict(root_corpus, num_word_each_sent, scores):
     "Return the score of the vectorized sentence in bc3 in dictionary form"
 
-    # Copy the structure of num_word_each_sent
-    bc3_score_dict = copy.deepcopy(num_word_each_sent)
-
+    bc3_score_dict = empty_bc3_structure_dict()
     current_sentence = 0
 
     for thread in root_corpus:
-        thread_listno = thread_listno_of_current_thread(thread)
+        thread_listno = listno_of_thread(thread)
         for sent_ID in sorted(bc3_score_dict[thread_listno].keys()):
             bc3_score_dict[thread_listno][sent_ID] = scores[current_sentence]
             current_sentence += 1
@@ -183,52 +206,54 @@ def sort_dict_by_value(dict):
     return dict_sorted
 
 def get_thread_summary(thread_listno, sent_scores, num_word_each_sent):
-    '''Return summary of a thread based on sent_scores with the length limit, as a list of sentence IDs.'''
+    '''Return summary of a thread based on sent_scores with the word limit, as a list of sentence IDs.
+       This is for BC3 emails only, not for new emails!
+       Debugged by Kenny on May 8th.'''
 
-    # length_limit is the length limit of ideal summary - 30% of original email by word count
-    length_limit = float(sum(num_word_each_sent[thread_listno].values())/100*30)
+    # The word limit of a summary - 30% of original email by word count
+    word_limit = sum(num_word_each_sent[thread_listno].values()) * 0.3
 
     # Sort each sentence in a <thread> according to annotation score in descending order
+    # These are actually sentence IDs, not full sentences
     sent_sorted_by_importance = sort_dict_by_value(sent_scores[thread_listno])
 
-    summary_word_count = 0
-    summary = []
-
+    # Construct the summary with the word limit
+    summary, summary_word_count = [], 0
     for sent in sent_sorted_by_importance:
         summary.append(sent[0])
         summary_word_count +=  num_word_each_sent[thread_listno][sent[0]]
-        if summary_word_count >= length_limit:
-            break
+        if summary_word_count >= word_limit: break
 
     return summary
 
-def return_ideal_summaries(anno_score_sent, num_word_each_sent):
-    '''Return the ideal summary from the annotaion score for each <thread> in dictionary form.'''
+def return_ideal_summaries(anno_sent_scores, num_word_each_sent):
+    '''Return the ideal summary from the annotation score for each <thread> in dictionary form.
+       Debugged by Kenny on May 8th.'''
     ideal_summaries = dict()
-    for thread_listno in anno_score_sent:
-        ideal_summaries[thread_listno] = get_thread_summary(thread_listno, anno_score_sent, num_word_each_sent)
+    for thread_listno in anno_sent_scores:
+        ideal_summaries[thread_listno] = get_thread_summary(thread_listno, anno_sent_scores, num_word_each_sent)
     return ideal_summaries
 
 def clear_helper_variables():
-    "delete everything in the file data/helper_variables.py"
+    '''Delete everything in the file data/helper_variables.py.
+       Debugged by Kenny on May 8th.'''
 
     f = open(os.path.dirname(os.path.abspath(__file__)) + "/data/helper_variables.py", "w")
+    f.write("")
     f.close()
 
 def save_variable(variable, variable_name = str):
-    "Save the variable into data/helper_variables"
+    '''Save the variable into data/helper_variables.
+       Debugged by Kenny on May 8th.'''
 
     f = open(os.path.dirname(os.path.abspath(__file__)) + "/data/helper_variables.py", "a")
-
-    f.write(variable_name + " = " + repr(variable) + "\n" +"\n")
-
+    f.write(variable_name + " = " + repr(variable) + "\n\n")
     f.close()
 
 def save_cross_validation_variables():
-    '''Saves all variables needed in cross_validation.py to helper_variables.py 
-       and pickles.'''
+    '''Saves all variables needed in cross_validation.py to helper_variables.py and pickles.'''
     tree = ET.parse(os.path.dirname(os.path.abspath(__file__)) + "/bc3_corpus/bc3corpus.1.0/annotation.xml")
-    root_annotation = tree.getroot()
+    annotation_root = tree.getroot()
 
     tree = ET.parse(os.path.dirname(os.path.abspath(__file__)) + "/bc3_corpus/bc3corpus.1.0/corpus.xml")
     root_corpus = tree.getroot()
@@ -241,9 +266,9 @@ def save_cross_validation_variables():
     num_word_each_sent = return_num_word_each_sent(root_corpus)
     save_variable(num_word_each_sent, "num_word_each_sent")
 
-    # anno_score_sent is the normalized annotation score for each sentence
-    anno_score_sent = return_anno_score_sent(root_annotation, num_word_each_sent)
-    save_variable(anno_score_sent, "anno_score_sent")
+    # anno_sent_scores is the normalized annotation score for each sentence
+    anno_sent_scores = return_anno_sent_scores(annotation_root, num_word_each_sent)
+    save_variable(anno_sent_scores, "anno_sent_scores")
 
     # num_sent_each_thread is the number of sentence in each thread
     num_sent_each_thread = return_num_sent_each_thread(root_corpus)
@@ -258,12 +283,11 @@ def save_cross_validation_variables():
     save_variable(bc3_score_dict, "bc3_score_dict")
 
     # Train classifier on full BC3 corpus and return the trained classifier 
-    from vectorize_bc3 import train_classifier
     random_forest_full = train_classifier(sentence_vectors, scores)
     pickle_data(random_forest_full, "random_forest_full")
 
     # Dictionary of ideal summaries weighted across 3 annotators
-    ideal_summaries = return_ideal_summaries(anno_score_sent, num_word_each_sent)
+    ideal_summaries = return_ideal_summaries(anno_sent_scores, num_word_each_sent)
     save_variable(ideal_summaries, 'ideal_summaries')
 
 def save_vectorize_bc3_variables():
@@ -428,6 +452,4 @@ def train_classifier(sent_vectors, sent_scores):
     return random_forest
 
 if __name__ == '__main__':
-    # save_all_variables()
-    a = detect_date_time("Charles McCathieNevile mailto:charles@w3.org phone: +61 (0) 409 134 136")
-    print a
+    save_all_variables()
