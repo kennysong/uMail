@@ -19,8 +19,7 @@
     }
   ],
   "background": {
-    "scripts": ["js/umail/background.js"],
-    "persistent": false
+    "scripts": ["js/umail/background.js"]
   },
 
   // So we can inject these as <script>s that have full access to the DOM

@@ -2,13 +2,13 @@
 var gmail;
 
 // Global variables for current email
-var length_ratio = 0.5;
 var email_id;
 var sentences_sorted;
 var sentence_index;
 var processed_sentence_to_original;
 var email_body;
-var summary_option = 'highlight';
+var length_ratio;
+var summary_type;
 
 // Initial check that jQuery and Gmail.js is loaded
 var checkLoaded = function() {
@@ -18,8 +18,12 @@ var checkLoaded = function() {
 
 // Main function for setup
 var uMailMain = function() {
+  // Load gmail.js object and add listener for opening emails
   gmail = Gmail();
   gmail.observe.on("open_email", function(id) { emailOpened(id); });  
+
+  // Load summary variables from background.js
+  window.postMessage({type: 'request_summary_variables'}, '*');
 };
 
 // Callback for when an email is opened
@@ -97,7 +101,7 @@ var displaySummary = function() {
   }
   var summary = sortByKey(summary, 'index');
 
-  if (summary_option === 'replaceEmail') {
+  if (summary_type === 'show-summary') {
     // Turn this summary array into a string, replacing \n with <br>
     var emailHTML = '';
     for (var i = 0; i < summary.length; i++) {
@@ -106,7 +110,7 @@ var displaySummary = function() {
       emailHTML += current_sentence + ' ';
     }
 
-  } else if (summary_option === 'highlight') {
+  } else if (summary_type === 'highlight') {
     // Get current email as HTML, but remove all HTML tags and make all newlines <br>
     var emailHTML = gmail.get.email_data(email_id).threads[email_id].content_html;
     emailHTML = emailHTML.replace(/<br ?\\?>|<\/div>|<\/p>/g, "{br}"); // Temporary marker for <br>
@@ -155,13 +159,25 @@ function sortByKey(array, key) {
 
 // Add a message listener for communication with content.js
 window.addEventListener('message', function(event) {
-    // Listener for response from /new_email
+    // Listener for response from /new_email from content.js
     if (event.data.type == 'new_email_response') {
-        console.log(event.data.data)
+        console.log("Email summarized from \\new_email.");
         var summaryJSON = JSON.parse(event.data.data);
         sentences_sorted = summaryJSON['sent_sorted'];
         sentence_index = summaryJSON['sent_index'];
         processed_sentence_to_original = summaryJSON['processed_sent_to_original'];
+
+    // Listener for summary variables response from content.js
+    } else if (event.data.type == 'summary_variables_response') {
+      console.log("Received summary variables from background.js.");
+      length_ratio = event.data.data['length_ratio'];
+      summary_type = event.data.data['summary_type'];
+
+    // Listener for summary variables update from content.js
+    } else if (event.data.type == 'update_summary_variables') {
+      console.log("Updated summary variables from popup.js.")
+      length_ratio = event.data.data['length_ratio'];
+      summary_type = event.data.data['summary_type'];
     }
 });
 
