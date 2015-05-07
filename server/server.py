@@ -10,7 +10,7 @@ app.config['DEBUG'] = True
 
 @app.route('/')
 def hello():
-    return "Hello world!"
+    return "The uMail server is up and running! <br/><br/> <img src='http://edgecats.net/first' alt='a random cat gif!'/>"
 
 @app.route('/new_email', methods=['POST'])
 def new_email():
