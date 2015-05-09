@@ -422,14 +422,14 @@ def vectorize_sentence(sentence, index, email, subject, num_recipients,
             - centroid_vector is the average tf-idf vector in the thread.
             - local_centroid_vector is the average tf-local-idf vector in the thread.'''
 
-    # Convert sentence to string if necessary
+    # Convert sentence to string if it is an ET.element
     if isinstance(sentence, ET.Element):
         sentence = sentence.text
 
     # Calculate all the (R14) features
     thread_line_number = index + 1
     rel_position_in_thread = index / float(len(context_sentences)) * 100
-    length = len(get_words_in_sentence(sentence))
+    word_length = len(get_words_in_sentence(sentence))
     is_question = 1 if '?' in sentence else 0
     rel_position_in_email = get_rel_pos_in_email(sentence, email)
     subject_similarity = get_subject_similarity(subject, sentence)
@@ -443,13 +443,13 @@ def vectorize_sentence(sentence, index, email, subject, num_recipients,
     # Custom feature: detect if there is a date or time or both in sentence
     has_date_time = helpers.detect_date_time(sentence)
      
-    #Custom feature: detect if there is an email in sentence, scaled by length of sentence
+    # Custom feature: detect if there is an email in sentence, scaled by word_length of sentence
     email_exist = helpers.detect_email(sentence)
-    email_exist = email_exist * len(sentence)
+    email_exist = email_exist * word_length
 
     # Put all of these features into a vector
     sentence_vector = np.array([thread_line_number, rel_position_in_thread, centroid_similarity,
-                      local_centroid_similarity, length, tf_idf_sum, tf_idf_avg, is_question,
+                      local_centroid_similarity, word_length, tf_idf_sum, tf_idf_avg, is_question,
                       email_number, rel_position_in_email, subject_similarity, num_recipients, 
                       has_date_time, email_exist])
 
