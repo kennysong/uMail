@@ -439,6 +439,22 @@ def detect_email(string):
     "Return 1 if there is an email in the string. Return 0 otherwise"
     return 1 if "@" in string else 0
 
+def get_num_you(sentence_words):
+    '''Given a list of uncleaned sentence words, returns the number of "you"s in the sentence.'''
+    num_you = 0
+    for word in sentence_words:
+        if "you" == word[:3]:
+            num_you += 1
+    return num_you
+
+def get_num_i(sentence_words):
+    '''Given a list of uncleaned sentence words, returns the number of "I"s in the sentences.'''
+    num_i = 0
+    for word in sentence_words:
+        if ("i" == word) or ("i'" == word[:2]):
+            num_i += 1
+    return num_i
+
 def train_classifier(sent_vectors, sent_scores):
     '''Trains a classifier, returns RandomForest object.'''
     random_forest = ensemble.RandomForestRegressor()

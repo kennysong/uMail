@@ -89,12 +89,15 @@ def get_words_in_email(email):
         word_list += get_words_in_sentence(sentence)
     return word_list
 
-def get_words_in_sentence(sentence):
+def get_words_in_sentence(sentence, cleaned=True):
     '''Given a sentence as an ET.Element OR string, return a list of cleaned words.'''
     if isinstance(sentence, ET.Element):
         sentence = sentence.text
 
-    return clean_up_words(sentence.split())
+    if cleaned:
+        return clean_up_words(sentence.split())
+    else:
+        return sentence.split()
 
 def clean_up_words(word_list):
     '''Given list of words, returns list of lowercase, alphanumeric-only, singular words.'''
@@ -429,7 +432,8 @@ def vectorize_sentence(sentence, index, email, subject, num_recipients,
     # Calculate all the (R14) features
     thread_line_number = index + 1
     rel_position_in_thread = index / float(len(context_sentences)) * 100
-    word_length = len(get_words_in_sentence(sentence))
+    raw_sentence_words = get_words_in_sentence(sentence, cleaned=False)
+    word_length = len(raw_sentence_words)
     is_question = 1 if '?' in sentence else 0
     rel_position_in_email = get_rel_pos_in_email(sentence, email)
     subject_similarity = get_subject_similarity(subject, sentence)
@@ -447,11 +451,17 @@ def vectorize_sentence(sentence, index, email, subject, num_recipients,
     email_exist = helpers.detect_email(sentence)
     email_exist = email_exist * word_length
 
+    # Custom feature: number of you's in the sentence
+    num_you = helpers.get_num_you(raw_sentence_words)
+
+    # Custom feature: number of I's in the sentence
+    num_i = helpers.get_num_i(raw_sentence_words)
+
     # Put all of these features into a vector
     sentence_vector = np.array([thread_line_number, rel_position_in_thread, centroid_similarity,
                       local_centroid_similarity, word_length, tf_idf_sum, tf_idf_avg, is_question,
                       email_number, rel_position_in_email, subject_similarity, num_recipients, 
-                      has_date_time, email_exist])
+                      has_date_time, email_exist, num_you, num_i])
 
     # Change NaN features to 0
     # This happens because one of the tf-idf vectors is all zero, because the
