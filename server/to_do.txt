@@ -1,8 +1,0 @@
-To-Do:
-
-Quan:
-1/ Implement meta sentence as a feature (Meta sentence is whether the sentence is referring to the email) ?
-
-2/ Try to see if you can label email based on their speech acts (the program the paper used for generated speech acts were no good)
-
-3/ Implement existence of date/ time or email in sentence as a feature (done - did not improve weighted recall by much)
