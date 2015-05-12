@@ -8,8 +8,7 @@ import pickle
 import os
 import re
 
-import helpers
-
+from helpers import *
 from scipy.spatial import distance
 from sklearn.externals import joblib
 from nltk.stem.snowball import SnowballStemmer
@@ -445,23 +444,26 @@ def vectorize_sentence(sentence, index, email, subject, num_recipients,
     local_centroid_similarity = 1 - distance.cosine(tf_local_idf_vector, local_centroid_vector)
 
     # Custom feature: detect if there is a date or time or both in sentence
-    has_date_time = helpers.detect_date_time(sentence)
+    has_date_time = detect_date_time(sentence)
      
     # Custom feature: detect if there is an email in sentence, scaled by word_length of sentence
-    email_exist = helpers.detect_email(sentence)
+    email_exist = detect_email(sentence)
     email_exist = email_exist * word_length
 
     # Custom feature: number of you's in the sentence
-    num_you = helpers.get_num_you(raw_sentence_words)
+    num_you = get_num_you(raw_sentence_words)
 
     # Custom feature: number of I's in the sentence
-    num_i = helpers.get_num_i(raw_sentence_words)
+    num_i = get_num_i(raw_sentence_words)
+
+    # Custom feature: number of verb normalized by the number of word in sentence
+    num_verb = verb_count(sentence)
 
     # Put all of these features into a vector
     sentence_vector = np.array([thread_line_number, rel_position_in_thread, centroid_similarity,
                       local_centroid_similarity, word_length, tf_idf_sum, tf_idf_avg, is_question,
                       email_number, rel_position_in_email, subject_similarity, num_recipients, 
-                      has_date_time, email_exist, num_you, num_i])
+                      has_date_time, email_exist, num_you, num_i, num_verb])
 
     # Change NaN features to 0
     # This happens because one of the tf-idf vectors is all zero, because the
