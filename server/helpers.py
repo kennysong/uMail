@@ -482,5 +482,20 @@ def train_classifier(sent_vectors, sent_scores):
 
     return random_forest
 
+def verb_count(string):
+    "Return the number of verb in a string."
+    #Tokenize string
+    string_tokenized = nltk.word_tokenize(string)
+
+    #Tag each tokens with its sentence functions
+    string_tagged = nltk.pos_tag(string_tokenized)
+
+    num_verb = 0 
+    verb_tag = ['VB', 'VBZ', 'VBN', 'VBG', 'VBD', 'VBP']
+    for word in string_tagged:
+        if word[1] in verb_tag: num_verb += 1
+
+    return num_verb
+
 if __name__ == '__main__':
     save_all_variables()
