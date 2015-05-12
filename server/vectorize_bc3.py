@@ -14,6 +14,44 @@ from scipy.spatial import distance
 from sklearn.externals import joblib
 from nltk.stem.snowball import SnowballStemmer
 
+def preprocess_corpus():
+    '''Processes the corpus and outputs a cleaned version, where emails, long numbers, and URLs are replaced with a token.'''
+    # Set up XML tree
+    tree = ET.parse(os.path.dirname(os.path.abspath(__file__)) + '/bc3_corpus/corpus.xml')
+    root = tree.getroot()
+
+    # Iterate through threads
+    for thread in root:
+        thread_sentences = get_sentences_in_thread(thread)
+        for sentence in thread_sentences:
+            # For each sentence in the thread, clean and replace the text
+            sentence_text = sentence.text
+            sentence_text = replace_emails_with_token(sentence_text)
+            sentence_text = replace_longnumbers_with_token(sentence_text)
+            sentence_text = replace_urls_with_token(sentence_text)
+            sentence.text = sentence_text
+
+    # Write this to file
+    tree.write(os.path.dirname(os.path.abspath(__file__)) + '/bc3_corpus/corpus_processed.xml')
+
+    print("Finished preprocess_corpus().")
+
+def replace_emails_with_token(sentence_text):
+    '''Replaces all emails in the string with {{email}}.
+       Regex from: http://stackoverflow.com/a/26752414/908744.'''
+    return re.sub('[^@|\s]+@[^@]+\.[^@|\s]+', '{{email}}', sentence_text)
+
+def replace_longnumbers_with_token(sentence_text):
+    '''Replaces all long numbers in the string with {{longnumber}}. This is very imperfect.
+       A long number is longer than 8 characters, or 6 digits including surrounding spaces.'''
+    return re.sub('[0-9\.\-\(\) ]{8,}', ' {{longnumber}} ', sentence_text)
+
+def replace_urls_with_token(sentence_text):
+    '''Replace all URLs in the string with {{url}}.
+       Regex from: https://gist.github.com/uogbuji/705383.''' 
+    return re.sub(ur'(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:\'".,<>?\xab\xbb\u201c\u201d\u2018\u2019]))',
+                  '{{url}}', sentence_text)
+
 def get_threads_in_root(root): 
     '''Takes the root of an ElementTree return a list of threads (ET.Element).'''
     return list(root)
@@ -75,11 +113,11 @@ def get_sentences_in_email(email):
 
 def get_words_in_thread(thread):
     '''Returns a list of all the cleaned words in a thread (ET.Element).'''
-    words = []
+    word_list = []
     emails = get_emails_in_thread(thread)
     for email in emails:
-        words = get_words_in_email(email)
-    return words
+        word_list += get_words_in_email(email)
+    return word_list
 
 def get_words_in_email(email):
     '''Given an email as an ET.Element OR string, return a list of cleaned words.'''
@@ -107,10 +145,10 @@ def clean_up_words(word_list):
 
     # Remove non alphabet or numbers
     for i in range(len(clean_word_list)):
-        clean_word_list[i] = ''.join([t for t in clean_word_list[i] if (t in '1234567890' or t in string.ascii_lowercase)])
+        clean_word_list[i] = ''.join([t for t in clean_word_list[i] if (t in '1234567890{}' or t in string.ascii_lowercase)])
 
     # Make into stem words
-    stemmer = SnowballStemmer("english")
+    stemmer = SnowballStemmer('english')
     for i in range(len(clean_word_list)):
         clean_word_list[i] = stemmer.stem(clean_word_list[i])
 
@@ -234,21 +272,21 @@ def get_tf_local_idf_vector(sentence, thread, root, word_counts_per_thread, voca
 def get_annotation_from_thread(thread):
     annotations = []
     for i in range(len(thread)):
-        if thread[i].tag == "annotation":
+        if thread[i].tag == 'annotation':
             annotations.append(thread[i])
     return annotations
 
 def get_sentences_from_annotations(annotation):
     sentences = []
     for i in range(len(annotation)):
-        if annotation[i].tag == "sentences":
+        if annotation[i].tag == 'sentences':
             sentences.append(annotation[i])
     return sentences
 
 def get_sentenceID_from_sentences(sentence):
     sentenceID = []
     for item in sentence:
-        sentenceID.append(item.attrib["id"])
+        sentenceID.append(item.attrib['id'])
     return sentenceID
 
 def get_sentenceID_from_thread(thread):
@@ -267,7 +305,7 @@ def get_sentenceID_from_thread(thread):
     return sentenceID
 
 def normalize_score(score):
-    tree_corpus = ET.parse(os.path.dirname(os.path.abspath(__file__)) + "/bc3_corpus/bc3corpus.1.0/corpus.xml")
+    tree_corpus = ET.parse(os.path.dirname(os.path.abspath(__file__)) + '/bc3_corpus/corpus_processed.xml')
     root_corpus = tree_corpus.getroot()
 
     corpus_sentence = dict()
@@ -289,10 +327,10 @@ def normalize_score(score):
     return score
 
 def get_annotated_scores():
-    tree_annotation = ET.parse(os.path.dirname(os.path.abspath(__file__)) + '/bc3_corpus/bc3corpus.1.0/annotation.xml')
+    tree_annotation = ET.parse(os.path.dirname(os.path.abspath(__file__)) + '/bc3_corpus/annotation.xml')
     root_annotation = tree_annotation.getroot()
 
-    tree_corpus = ET.parse(os.path.dirname(os.path.abspath(__file__)) + "/bc3_corpus/bc3corpus.1.0/corpus.xml")
+    tree_corpus = ET.parse(os.path.dirname(os.path.abspath(__file__)) + '/bc3_corpus/corpus_processed.xml')
     root_corpus = tree_corpus.getroot()
 
     # Dictionary of thread number, each of which is another dictionary of the ID of each sentences in a thread
@@ -325,7 +363,7 @@ def vectorize_bc3_corpus():
        and a dictionary of {vector: vector/sentence metadata}.'''
 
     # Set up XML tree
-    tree = ET.parse(os.path.dirname(os.path.abspath(__file__)) + '/bc3_corpus/bc3corpus.1.0/corpus.xml')
+    tree = ET.parse(os.path.dirname(os.path.abspath(__file__)) + '/bc3_corpus/corpus_processed.xml')
     root = tree.getroot()
 
     # Get word occurrence counts for each thread
@@ -336,23 +374,23 @@ def vectorize_bc3_corpus():
         word_counts = collections.Counter(words)
         word_counts_per_thread[thread] = word_counts
 
-    print("Finished getting word counts for each thread")
+    print('Finished getting word counts for each thread')
 
     # Load bc3 vocab list variables from helper_variables.py
     from data.helper_variables import bc3_vocab_list as vocab_list
     from data.helper_variables import bc3_vocab_list_index as vocab_list_index
 
-    print("Finished constructing vocab list")
+    print('Finished constructing vocab list')
 
     # Load tf_idf vector from pickled cache {thread_id-sentence_id: tf_idf vector}
-    tf_idf_file = open(os.path.dirname(os.path.abspath(__file__)) + "/data/bc3_tf_idf_vectors", "rb")
-    tf_local_idf_file = open(os.path.dirname(os.path.abspath(__file__)) + "/data/bc3_tf_local_idf_vectors", "rb")
+    tf_idf_file = open(os.path.dirname(os.path.abspath(__file__)) + '/data/bc3_tf_idf_vectors.pck', 'rb')
+    tf_local_idf_file = open(os.path.dirname(os.path.abspath(__file__)) + '/data/bc3_tf_local_idf_vectors.pck', 'rb')
     cached_tf_idf_vectors = pickle.load(tf_idf_file)
     cached_tf_local_idf_vectors = pickle.load(tf_local_idf_file)
     tf_idf_file.close()
     tf_local_idf_file.close()
 
-    print("Loaded tf_idf vectors from pickle.")
+    print('Loaded tf_idf vectors from pickle.')
 
     # Calculate and cache all centroid vectors, in {thread: centroid_vector}
     cached_centroid_vectors, cached_local_centroid_vectors = dict(), dict()
@@ -373,7 +411,7 @@ def vectorize_bc3_corpus():
         cached_centroid_vectors[thread] = centroid_vector
         cached_local_centroid_vectors[thread] = local_centroid_vector
 
-    print("Finished calculating centroid vectors")
+    print('Finished calculating centroid vectors')
 
     # Traverse the XML tree, vectorizing each sentence as we encounter it
     sentence_vectors = [] # [np.array, ...]
@@ -448,8 +486,13 @@ def vectorize_sentence(sentence, index, email, subject, num_recipients,
     has_date_time = helpers.detect_date_time(sentence)
      
     # Custom feature: detect if there is an email in sentence, scaled by word_length of sentence
-    email_exist = helpers.detect_email(sentence)
-    email_exist = email_exist * word_length
+    email_exist = helpers.detect_email(sentence) * word_length
+
+    # Custom feature: number of URLs, scaled by word_length of sentence
+    url_exist = helpers.detect_url(sentence) * word_length
+
+    # Custom feature: number of long numbers, scaled by word_length of sentence
+    longnumber_exist = helpers.detect_longnumber(sentence) * word_length
 
     # Custom feature: number of you's in the sentence
     num_you = helpers.get_num_you(raw_sentence_words)
@@ -461,7 +504,7 @@ def vectorize_sentence(sentence, index, email, subject, num_recipients,
     sentence_vector = np.array([thread_line_number, rel_position_in_thread, centroid_similarity,
                       local_centroid_similarity, word_length, tf_idf_sum, tf_idf_avg, is_question,
                       email_number, rel_position_in_email, subject_similarity, num_recipients, 
-                      has_date_time, email_exist, num_you, num_i])
+                      has_date_time, email_exist, url_exist, longnumber_exist, num_you, num_i])
 
     # Change NaN features to 0
     # This happens because one of the tf-idf vectors is all zero, because the
@@ -489,6 +532,6 @@ def get_bc3_vectors_and_scores():
 
     return aligned_sentence_vectors, aligned_scores
 
-
 if __name__ == '__main__':
+    preprocess_corpus()
     aligned_sentence_vectors, aligned_scores = get_bc3_vectors_and_scores()

@@ -6,6 +6,7 @@ import os
 import nltk
 import re
 import datetime
+import collections
 
 import vectorize_bc3 as bc3
 
@@ -105,7 +106,7 @@ def empty_bc3_structure_dict():
 
     # Iterate through each thread
     bc3_structure_dict = dict()
-    root_corpus = ET.parse(os.path.dirname(os.path.abspath(__file__)) + '/bc3_corpus/bc3corpus.1.0/corpus.xml').getroot()
+    root_corpus = ET.parse(os.path.dirname(os.path.abspath(__file__)) + '/bc3_corpus/corpus_processed.xml').getroot()
     for thread in root_corpus:
         # Iterate through each sentence in the thread
         sentences = bc3.get_sentences_in_thread(thread)
@@ -252,10 +253,10 @@ def save_variable(variable, variable_name = str):
 
 def save_cross_validation_variables():
     '''Saves all variables needed in cross_validation.py to helper_variables.py and pickles.'''
-    tree = ET.parse(os.path.dirname(os.path.abspath(__file__)) + "/bc3_corpus/bc3corpus.1.0/annotation.xml")
+    tree = ET.parse(os.path.dirname(os.path.abspath(__file__)) + "/bc3_corpus/annotation.xml")
     annotation_root = tree.getroot()
 
-    tree = ET.parse(os.path.dirname(os.path.abspath(__file__)) + "/bc3_corpus/bc3corpus.1.0/corpus.xml")
+    tree = ET.parse(os.path.dirname(os.path.abspath(__file__)) + "/bc3_corpus/corpus_processed.xml")
     root_corpus = tree.getroot()
 
     # Vectorize the bc3 corpus
@@ -299,7 +300,7 @@ def save_vectorize_bc3_variables():
 
     # Calculate vocab list for entire corpus
     # This is needed for the tf-idf vectors, see function for more details
-    tree = ET.parse(os.path.dirname(os.path.abspath(__file__)) + '/bc3_corpus/bc3corpus.1.0/corpus.xml')
+    tree = ET.parse(os.path.dirname(os.path.abspath(__file__)) + '/bc3_corpus/corpus_processed.xml')
     root = tree.getroot()
 
     vocab_list, vocab_list_set = [], set()
@@ -314,31 +315,40 @@ def save_vectorize_bc3_variables():
     save_variable(vocab_list, 'bc3_vocab_list')
     save_variable(vocab_list_index, 'bc3_vocab_list_index')
 
-    ## Uncomment this to recalculate the tf_idf vector pickle cache (takes 4-5 hours)
+    ## Uncomment below to recalculate the tf_idf vector pickle cache (takes 4-5 hours)
+    # # Get word occurrence counts for each thread
+    # word_counts_per_thread = dict()
+    # for thread in root:
+    #     words = bc3.get_words_in_thread(thread)
+    #     word_counts = collections.Counter(words)
+    #     word_counts_per_thread[thread] = word_counts
+
+    # print('Finished getting word counts for each thread')
+
     # # Calculate and cache all tf_idf vectors, in {sentence: tf-idf vector}
     # cached_tf_idf_vectors, cached_tf_local_idf_vectors = dict(), dict()
     # for thread_index in range(len(root)):
     #         # Get tf-idf vector for each sentence in this thread
     #         thread = root[thread_index]
-    #         thread_sentences = get_sentences_in_thread(thread)
+    #         thread_sentences = bc3.get_sentences_in_thread(thread)
     #         for sentence in thread_sentences:
     #                 # Get the key for the sentence as thread_id-sentence_id
     #                 thread_id = thread[1].text
     #                 sentence_id = sentence.attrib['id']
     #                 sentence_key = thread_id + '-' + sentence_id
 
-    #                 tf_idf_vector = get_tf_idf_vector(sentence, thread, root, word_counts_per_thread, vocab_list_index)
+    #                 tf_idf_vector = bc3.get_tf_idf_vector(sentence, thread, root, word_counts_per_thread, vocab_list_index)
     #                 cached_tf_idf_vectors[sentence_key] = tf_idf_vector
-    #                 tf_local_idf_vector = get_tf_local_idf_vector(sentence, thread, root, word_counts_per_thread, vocab_list_index)
+    #                 tf_local_idf_vector = bc3.get_tf_local_idf_vector(sentence, thread, root, word_counts_per_thread, vocab_list_index)
     #                 cached_tf_local_idf_vectors[sentence_key] = tf_local_idf_vector
 
     #         print("Calculated tf-idf for thread %i" % thread_index)
 
     # # Pickle the tf-idf dictionaries
-    # tf_idf_file = open(os.path.dirname(os.path.abspath(__file__)) + "/data/bc3_tf_idf_vectors", "wb")
+    # tf_idf_file = open(os.path.dirname(os.path.abspath(__file__)) + "/data/bc3_tf_idf_vectors.pck", "wb")
     # pickle.dump(cached_tf_idf_vectors, tf_idf_file, protocol=2)
     # tf_idf_file.close()
-    # tf_local_idf_file = open(os.path.dirname(os.path.abspath(__file__)) + "/data/bc3_tf_local_idf_vectors", "wb")
+    # tf_local_idf_file = open(os.path.dirname(os.path.abspath(__file__)) + "/data/bc3_tf_local_idf_vectors.pck", "wb")
     # pickle.dump(cached_tf_local_idf_vectors, tf_local_idf_file, protocol=2)
     # tf_local_idf_file.close()
 
@@ -351,7 +361,7 @@ def save_vectorize_email_variables():
     from vectorize_bc3 import get_threads_in_root, get_bc3_vectors_and_scores, get_words_in_thread
 
     # Calculate words in each thread, save to threads_words.py
-    tree = ET.parse(os.path.dirname(os.path.abspath(__file__)) + '/bc3_corpus/bc3corpus.1.0/corpus.xml')
+    tree = ET.parse(os.path.dirname(os.path.abspath(__file__)) + '/bc3_corpus/corpus_processed.xml')
     root_corpus = tree.getroot()
     threads = get_threads_in_root(root_corpus)
     threads_words = [set(get_words_in_thread(thread)) for thread in threads]
@@ -414,7 +424,7 @@ def detect_date_time(string):
                 except ValueError: 
                     pass
         except IndexError: 
-            return True
+            return 1
 
     #default is set to datetime.datetime.utcnow below because of the way the class parser works. 
     #It returns the default time (curente date 00:00:00) if there is no date and time in the string
@@ -430,19 +440,28 @@ def detect_date_time(string):
     #need to have type error below because of the existence of sentence that include information about timezone in bc3 corpus
     try:
         if datetime == default: 
-            return False
+            return 0
         else: 
-            return True
-    except TypeError: return True
+            return 1
+    except TypeError: return 1
 
 def detect_email(string):
-    "Return 1 if there is an email in the string. Return 0 otherwise"
-    return 1 if "@" in string else 0
+    "Return the number of emails in the (processed) string."
+    return string.count('{{email}}')
+
+def detect_longnumber(string):
+    "Return the number of long numbers in the (processed) string."
+    return string.count('{{longnumber}}')
+
+def detect_url(string):
+    "Return the number of URLs in the (processed) string."
+    return string.count('{{url}}')
 
 def get_num_you(sentence_words):
     '''Given a list of uncleaned sentence words, returns the number of "you"s in the sentence.'''
     num_you = 0
     for word in sentence_words:
+        word = word.lower()
         if "you" == word[:3]:
             num_you += 1
     return num_you
@@ -451,6 +470,7 @@ def get_num_i(sentence_words):
     '''Given a list of uncleaned sentence words, returns the number of "I"s in the sentences.'''
     num_i = 0
     for word in sentence_words:
+        word = word.lower()
         if ("i" == word) or ("i'" == word[:2]):
             num_i += 1
     return num_i

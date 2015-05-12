@@ -77,7 +77,7 @@ def cross_validate(bc3_vector_dict, bc3_score_dict, ideal_summaries, num_word_ea
     predicted_sent_scores = empty_bc3_structure_dict()
 
     # Get all thread listno in bc3
-    corpus_root = ET.parse(os.path.dirname(os.path.abspath(__file__)) + "/bc3_corpus/bc3corpus.1.0/corpus.xml").getroot()
+    corpus_root = ET.parse(os.path.dirname(os.path.abspath(__file__)) + "/bc3_corpus/corpus_processed.xml").getroot()
     thread_listnos = [listno_of_thread(thread) for thread in corpus_root]
 
     # Run 10-fold cross validation, collecting the predicted score for each sentence in the corpus

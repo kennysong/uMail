@@ -69,7 +69,7 @@ def vectorize_email(email_message, title, to_cc):
     sentences = bc3.get_sentences_in_email(email_message)
 
     # Load the BC3 corpus for tfidf testing
-    tree = ET.parse(os.path.dirname(os.path.abspath(__file__)) + '/bc3_corpus/bc3corpus.1.0/corpus.xml')
+    tree = ET.parse(os.path.dirname(os.path.abspath(__file__)) + '/bc3_corpus/corpus_processed.xml')
     root_corpus = tree.getroot()
     threads = bc3.get_threads_in_root(root_corpus)
 
@@ -117,47 +117,60 @@ def vectorize_email(email_message, title, to_cc):
 
     return sentence_vectors
 
-def sent_sorted_importance(random_forest_full, sent_vectors, sentences, sents_adv_removed):
+def get_sents_by_importance(random_forest_full, sent_vectors, sentences, display_sentences):
     "Return the sentences sorted by importance score"
 
     sent_scores = [float(random_forest_full.predict(sent)) for sent in sent_vectors]
 
-    sent_sorted_importance = [x for (y, x) in sorted(zip(sent_scores, sents_adv_removed), reverse=True)]
+    sents_by_importance = [x for (y, x) in sorted(zip(sent_scores, display_sentences), reverse=True)]
 
-    return sent_sorted_importance
+    return sents_by_importance
 
-def sent_order(sentences):
+def get_original_sent_order(sentences):
     "Return the position of each sentence in the email as a dictionary {sentence1: index1, sentence2: index2, ...}"
 
-    sent_index= dict()
-
+    original_sent_order = dict()
     count = 1 
 
     for sent in sentences:
-        sent_index[sent] = count 
+        original_sent_order[sent] = count 
         count += 1
 
-    return sent_index
+    return original_sent_order
+
+def preprocess_email(email_message):
+    '''Takes in an email, and outputs a cleaned version, where emails, long numbers, and URLs are replaced with a token.'''
+    sentences = bc3.get_sentences_in_email(email_message)
+    clean_sentences = []
+    for sentence in sentences:
+        clean_sentence = sentence
+        clean_sentence = bc3.replace_emails_with_token(clean_sentence)
+        clean_sentence = bc3.replace_longnumbers_with_token(clean_sentence)
+        clean_sentence = bc3.replace_urls_with_token(clean_sentence)
+        clean_sentences.append(clean_sentence)
+    return ' '.join(clean_sentences)
 
 def process_email(email_message, title, to_cc):
-    "Output a list of sentences sorted by importance and a diciontary of the order of the sentences"
+    "Output a list of sentences sorted by importance and a dictionary of the order of the sentences"
 
-    sents_adv_removed = bc3.get_sentences_in_email(remove_adverb(email_message))
-
+    # Get original sentences in email, as well as shortened sentences to display
     sentences = bc3.get_sentences_in_email(email_message)
+    display_sentences = bc3.get_sentences_in_email(remove_adverb(email_message))
 
-    processed_sent_to_original = dict()
+    # Dictionary that maps a shortened display sentence to the original
+    display_sent_to_original = {display_sentences[i]: sentences[i] for i in range(len(sentences))}
 
-    for i in range(len(sents_adv_removed)):
-        processed_sent_to_original[sents_adv_removed[i]] = sentences[i] 
+    # Process the email message for vectorization and vectorize it
+    processed_email_message = preprocess_email(email_message)
+    sent_vectors = vectorize_email(processed_email_message, title, to_cc)
 
-    # Output a list of sentences sorted by importance and a diciontary of the order of the sentences
+    # Calculate variables to return:
+    # A list of sentences sorted by importance, and a dictionary of the order of the sentences
     random_forest_full = pickle_load("random_forest_full")
+    sents_by_importance = get_sents_by_importance(random_forest_full, sent_vectors, sentences, display_sentences)
+    original_sent_order = get_original_sent_order(sentences)
 
-    sent_vectors = vectorize_email(email_message, title, to_cc)
-    sentences = bc3.get_sentences_in_email(email_message)
-
-    return sent_sorted_importance(random_forest_full, sent_vectors, sentences, sents_adv_removed), sent_order(sentences), processed_sent_to_original
+    return sents_by_importance, original_sent_order, display_sent_to_original
 
 email_message = "My fellow students. A belated Happy New Year and warm wishes for the rest of the semester ahead. Our time here at NYU Shanghai is flying by swiftly and I am excited to announce we are approaching the election season of the 2015-2016 Student Government at NYU Shanghai. I would like to invite you to our Elections Informational Meeting on March 5th, during the 12:30-1:45 lunch hour (room TBD) for an extremely important and insightful chance to learn about the upcoming elections. At this meeting, the Student Government and the Elections Board will be present to provide information and answer questions about the election timeline, candidacy, and campaign rules and regulations. For those interested in running for an elected position, you are highly encouraged to attend for your own benefit. This year's elections will be notably different from previous elections as the current Executive Board has been working determinedly to revise the Student Constitution and structure of Student Government to reflect a more efficient,  inclusive, and precise organizational structure that will better suit the needs of the Student Body and Student Governments of the future. We invite you all to read through the 2015 Constitutional Revisions and note the changes from the Original Constitution. You will find the differences to be at once significant, but nuanced. The Student Constitution will be open to you for comment until March 5. After you review the Constitution, please vote to ratify the revisions here on OrgSync. If you have comments on the Constitution, please email shanghai.student.government@nyu.edu. Please RSVP here if you plan to attend the Elections Informational Meeting. Please see below to read the 2015 Constitutional Revisions. Student Constitution 2015-2016. If you wish to read the Original Constitution, see below. Student Government is the heart of student interests and activity at NYU Shanghai and the Student Constitution gives life to the Student Government. If you are passionate about enhancing the student experience and community spirit at NYU Shanghai, I encourage you to read the Constitution, understand it, and run for Student Government."
 to_cc = "NYU Shanghai Students CO17 <nyushanghai-students-co17-group@nyu.edu>, NYU Shanghai Students CO18 <nyushanghai-students-co18-group@nyu.edu>"
@@ -168,8 +181,8 @@ if __name__ == '__main__':
     title = "Constitution Revisions & Elections Info Meeting"
     to_cc = "NYU Shanghai Students CO17 <nyushanghai-students-co17-group@nyu.edu>, NYU Shanghai Students CO18 <nyushanghai-students-co18-group@nyu.edu>"
     email_message = "We are saddened by the thousands of lives loss in the Nepal Earthquake. We thank the NYU Shanghai community for showing its compassion and spirit in sending prayers and thoughts to those that have been impacted. We would like to bring the community together at 7pm Monday 5/4 in Room 808 for a candlelight vigil followed by a performance by the Other Octaves. We know the journey to rebuilding will take time and we stand committed to doing our part. To begin, the Rotaract Club at NYU Shanghai will be hosting a benefit event on Sunday May 10 from 530pm-7pm in conjunction with the Rotary of Shanghai. The benefit event will include talks and performances by members of the NYU Shanghai community with a special performance by the Symphony Orchestra. All proceeds will be donated to providing shelterboxes that will be sent to Nepal. You can reach out to Hunter Jarvis ('17) hmj239@nyu.edu and Lillian Korinek ('18) lhk250@nyu.edu if you would like to be involved."
-    sent_sorted, sent_index, processed_sent_to_original = process_email(email_message, title, to_cc)
+    sents_by_importance, original_sent_order, display_sent_to_original = process_email(email_message, title, to_cc)
 
-    print(sent_sorted)
-    print(sent_index)
-    print(processed_sent_to_original)
+    print(sents_by_importance)
+    print(original_sent_order)
+    print(display_sent_to_original)
