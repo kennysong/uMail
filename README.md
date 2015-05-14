@@ -6,9 +6,12 @@
 
 Video Presentation at [https://youtu.be/oi-rPdOlY74](https://youtu.be/oi-rPdOlY74).
 
-![Extension popup](https://raw.githubusercontent.com/kennysong/uMail/master/extension/img/Splash.png)
-![Extension settings](https://raw.githubusercontent.com/kennysong/uMail/master/extension/img/Settings.png)
-
-![Summarized email](https://raw.githubusercontent.com/kennysong/uMail/master/extension/img/Gmail.png)
-
 Authors: Kenny Song and Quan Vuong
+
+### Screenshots
+
+![Extension popup](https://raw.githubusercontent.com/kennysong/uMail/master/extension/img/readme/Popup.png)
+![Extension settings](https://raw.githubusercontent.com/kennysong/uMail/master/extension/img/readme/Settings.png)
+
+![Summarized email](https://raw.githubusercontent.com/kennysong/uMail/master/extension/img/readme/Gmail.png)
+
